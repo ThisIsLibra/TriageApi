@@ -22,6 +22,7 @@ import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
@@ -83,6 +84,47 @@ public class Connector {
         buffer.flush();
         //Return the byte array
         return buffer.toByteArray();
+    }
+
+    /**
+     * Performs a generic HTTP POST request based on the given request. The
+     * response is returned as a byte array, which can be converted into several
+     * data types, depending on the expected outcome.
+     *
+     * @param url the URL to send the POST request to
+     * @param json the JSON body of the post request
+     * @return the web server's response in the form of a byte array
+     * @throws IOException if anything goes wrong with the HTTP POST connection
+     */
+    public byte[] post(String url, String json) throws IOException {
+        StringEntity entity = new StringEntity(json);
+        //Create a HTTP client
+        CloseableHttpClient httpClient = HttpClients.createDefault();
+        //Create a HTTP post object for the given URL
+        HttpPost httpPost = new HttpPost(url);
+        //Add the API key to the request
+        httpPost.setHeader("Authorization", "Bearer " + key);
+        //Set the type to JSON
+        httpPost.setHeader("Accept", "application/json");
+        httpPost.setHeader("Content-type", "application/json");
+        httpPost.setEntity(entity);
+        //Execute the HTTP POST request
+        CloseableHttpResponse response = httpClient.execute(httpPost);
+        //Get the response
+        HttpEntity responseEntity = response.getEntity();
+
+        //Read the response in chunks of 1024 bytes
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        int offset;
+        byte[] data = new byte[1024];
+        while ((offset = responseEntity.getContent().read(data, 0, data.length)) != -1) {
+            buffer.write(data, 0, offset);
+        }
+        //Flush the buffer
+        buffer.flush();
+        //Return the byte array
+        return buffer.toByteArray();
+
     }
 
     /**

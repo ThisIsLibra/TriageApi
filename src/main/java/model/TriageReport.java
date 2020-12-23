@@ -21,6 +21,7 @@ package model;
  * @author Max 'Libra' Kersten [@LibraAnalysis, https://maxkersten.nl]
  */
 public class TriageReport {
+
     private String version;
     private TargetDesc sample;
     private TargetDesc task;
@@ -31,6 +32,21 @@ public class TriageReport {
     private NetworkReport networkReport;
     private Dump[] dumped;
     private Extract[] extracted;
+    private boolean isEmpty;
+
+    public TriageReport() {
+        this.version = "";
+        this.sample = new TargetDesc();
+        this.task = new TargetDesc();
+        this.errors = new ReportTaskFailure[0];
+        this.analysis = new ReportAnalysisInfo();
+        this.processes = new Process[0];
+        this.signatures = new Signature[0];
+        this.networkReport = new NetworkReport();
+        this.dumped = new Dump[0];
+        this.extracted = new Extract[0];
+        this.isEmpty = true;
+    }
 
     public TriageReport(String version, TargetDesc sample, TargetDesc task, ReportTaskFailure[] errors, ReportAnalysisInfo analysis, Process[] processes, Signature[] signatures, NetworkReport networkReport, Dump[] dumped, Extract[] extracted) {
         this.version = version;
@@ -43,6 +59,7 @@ public class TriageReport {
         this.networkReport = networkReport;
         this.dumped = dumped;
         this.extracted = extracted;
+        this.isEmpty = false;
     }
 
     public String getVersion() {
@@ -124,6 +141,5 @@ public class TriageReport {
     public void setExtracted(Extract[] extracted) {
         this.extracted = extracted;
     }
-    
-    
+
 }

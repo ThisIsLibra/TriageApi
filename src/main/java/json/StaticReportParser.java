@@ -16,7 +16,6 @@
  */
 package json;
 
-import exception.EmptyArgumentException;
 import model.File;
 import model.SampleWrapper;
 import model.StaticReport;
@@ -40,11 +39,10 @@ public class StaticReportParser extends GenericParser {
      *
      * @param rawJson the JSON value to parse
      * @return the object based on the given JSON value
-     * @throws EmptyArgumentException if the JSON value is null
      */
-    public StaticReport parse(String rawJson) throws EmptyArgumentException {
+    public StaticReport parse(String rawJson) {
         if (rawJson == null) {
-            throw new EmptyArgumentException("The given JSON blob is null!");
+            return new StaticReport();
         }
         JSONObject json = new JSONObject(rawJson);
 

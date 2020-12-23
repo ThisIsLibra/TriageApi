@@ -16,12 +16,13 @@
  */
 package json;
 
-import exception.EmptyArgumentException;
 import java.util.List;
 import model.FileUploadResult;
 import model.Sample;
+import model.SearchResult;
 import model.StaticReport;
 import model.TriageReport;
+import org.json.JSONArray;
 
 /**
  * This class serves as a wrapper class for the more specific parsers. As such,
@@ -57,6 +58,13 @@ public class JsonParser {
     private FileUploadResultParser fileUploadResultParser;
 
     /**
+     * The parser to convert JSON arrays into lists
+     */
+    private ListParser listParser;
+
+    private SearchResultParser searchResultParser;
+
+    /**
      * Creates an instance of this parser, which instantiates all required
      * embedded parsers.
      */
@@ -65,6 +73,8 @@ public class JsonParser {
         sampleParser = new SampleParser();
         staticReportParser = new StaticReportParser();
         fileUploadResultParser = new FileUploadResultParser();
+        listParser = new ListParser();
+        searchResultParser = new SearchResultParser();
     }
 
     /**
@@ -76,9 +86,8 @@ public class JsonParser {
      *
      * @param json the JSON value to parse
      * @return the object based on the given JSON value
-     * @throws EmptyArgumentException if the JSON value is null
      */
-    public StaticReport parseStaticReport(String json) throws EmptyArgumentException {
+    public StaticReport parseStaticReport(String json) {
         return staticReportParser.parse(json);
     }
 
@@ -91,9 +100,8 @@ public class JsonParser {
      *
      * @param json the JSON value to parse
      * @return the object based on the given JSON value
-     * @throws EmptyArgumentException if the JSON value is null
      */
-    public TriageReport parseTriageReport(String json) throws EmptyArgumentException {
+    public TriageReport parseTriageReport(String json) {
         return triageReportParser.parse(json);
     }
 
@@ -106,9 +114,8 @@ public class JsonParser {
      *
      * @param json the JSON value to parse
      * @return the object based on the given JSON value
-     * @throws EmptyArgumentException if the JSON value is null
      */
-    public List<Sample> parseSamples(String json) throws EmptyArgumentException {
+    public List<Sample> parseSamples(String json) {
         return sampleParser.parseBulk(json);
     }
 
@@ -121,9 +128,8 @@ public class JsonParser {
      *
      * @param json the JSON value to parse
      * @return the object based on the given JSON value
-     * @throws EmptyArgumentException if the JSON value is null
      */
-    public Sample parseSample(String json) throws EmptyArgumentException {
+    public Sample parseSample(String json) {
         return sampleParser.parse(json);
     }
 
@@ -136,9 +142,28 @@ public class JsonParser {
      *
      * @param json the JSON value to parse
      * @return the object based on the given JSON value
-     * @throws EmptyArgumentException if the JSON value is null
      */
-    public FileUploadResult parseFileUpload(String json) throws EmptyArgumentException {
+    public FileUploadResult parseFileUpload(String json) {
         return fileUploadResultParser.parseFileUploadResult(json);
+    }
+
+    /**
+     * Parses a JSON array into a list of strings
+     *
+     * @param jsonArray the array to parse
+     * @return the list of strings
+     */
+    public List<String> parseList(JSONArray jsonArray) {
+        return listParser.parse(jsonArray);
+    }
+
+    /**
+     * Parses a JSON string into a SearchResult object
+     *
+     * @param json the JSON string
+     * @return the SearchResult object
+     */
+    public SearchResult parseSearchResult(String json) {
+        return searchResultParser.parse(json);
     }
 }

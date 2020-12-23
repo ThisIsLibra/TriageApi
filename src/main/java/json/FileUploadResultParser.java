@@ -16,7 +16,6 @@
  */
 package json;
 
-import exception.EmptyArgumentException;
 import model.FileUploadResult;
 import org.json.JSONObject;
 
@@ -37,11 +36,10 @@ public class FileUploadResultParser {
      *
      * @param rawJson the JSON value to parse
      * @return the object based on the given JSON value
-     * @throws EmptyArgumentException if the JSON value is null
      */
-    public FileUploadResult parseFileUploadResult(String rawJson) throws EmptyArgumentException {
+    public FileUploadResult parseFileUploadResult(String rawJson) {
         if (rawJson == null) {
-            throw new EmptyArgumentException("The given JSON blob is null!");
+            return new FileUploadResult();
         }
         JSONObject json = new JSONObject(rawJson);
         String id = json.optString("id");

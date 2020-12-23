@@ -16,7 +16,6 @@
  */
 package json;
 
-import exception.EmptyArgumentException;
 import model.Config;
 import model.Dropper;
 import model.DropperURL;
@@ -57,11 +56,10 @@ public class TriageReportParser extends GenericParser {
      *
      * @param rawJson the JSON value to parse
      * @return the object based on the given JSON value
-     * @throws EmptyArgumentException if the JSON value is null
      */
-    public TriageReport parse(String rawJson) throws EmptyArgumentException {
+    public TriageReport parse(String rawJson) {
         if (rawJson == null) {
-            throw new EmptyArgumentException("The given JSON blob is null!");
+            return new TriageReport();
         }
         JSONObject json = new JSONObject(rawJson);
 

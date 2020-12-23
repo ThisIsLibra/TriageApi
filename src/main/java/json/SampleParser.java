@@ -16,7 +16,6 @@
  */
 package json;
 
-import exception.EmptyArgumentException;
 import java.util.ArrayList;
 import java.util.List;
 import org.json.JSONArray;
@@ -42,13 +41,12 @@ public class SampleParser {
      *
      * @param rawJson the JSON value to parse
      * @return the object based on the given JSON value
-     * @throws EmptyArgumentException if the JSON value is null
      */
-    public List<Sample> parseBulk(String rawJson) throws EmptyArgumentException {
-        if (rawJson == null) {
-            throw new EmptyArgumentException("The given JSON blob is null!");
-        }
+    public List<Sample> parseBulk(String rawJson) {
         List<Sample> samples = new ArrayList<>();
+        if (rawJson == null) {
+            return samples;
+        }
 
         JSONArray array = new JSONObject(rawJson).optJSONArray("data");
         for (int i = 0; i < array.length(); i++) {
@@ -67,19 +65,18 @@ public class SampleParser {
      *
      * @param rawJson the JSON value to parse
      * @return the object based on the given JSON value
-     * @throws EmptyArgumentException if the JSON value is null
      */
-    public Sample parse(String rawJson) throws EmptyArgumentException {
+    public Sample parse(String rawJson) {
         if (rawJson == null) {
-            throw new EmptyArgumentException("The given JSON blob is null!");
+            return new Sample();
         }
         JSONObject json = new JSONObject(rawJson);
         return getSample(json);
     }
 
-    private Sample getSample(JSONObject json) throws EmptyArgumentException {
+    private Sample getSample(JSONObject json) {
         if (json == null) {
-            throw new EmptyArgumentException("The given JSON blob is null!");
+            return new Sample();
         }
         String id = json.optString("id");
         String status = json.optString("status");
