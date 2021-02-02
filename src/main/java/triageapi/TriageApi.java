@@ -18,12 +18,17 @@ package triageapi;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import json.JsonParser;
 import model.FileUploadResult;
 import model.Sample;
@@ -118,6 +123,40 @@ public class TriageApi {
      */
     private String getUrl(String appendix) {
         return apiBase + appendix;
+    }
+
+    /**
+     * Function to URL encode a given string
+     *
+     * @param toEncode the string to encode
+     * @return the encoded string
+     */
+    private String encode(String toEncode) {
+        try {
+            return URLEncoder.encode(toEncode, StandardCharsets.UTF_8.toString());
+        } catch (UnsupportedEncodingException ex) {
+            System.out.println("ERROR: unable to get the UTF-8 character set!");
+            return "";
+        }
+    }
+
+    private String formatDateTimeString(String input) {
+        Pattern pattern = Pattern.compile("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}");
+        Matcher matcher = pattern.matcher(input);
+
+        String match = null;
+
+        while (matcher.find()) {
+            match = matcher.group(0);
+            break;
+        }
+
+        if (match != null) {
+            return match + "Z";
+        } else {
+            return "";
+        }
+
     }
 
     /**
@@ -604,7 +643,7 @@ public class TriageApi {
      * @throws IOException if the HTTP request fails
      */
     public SearchResult search(String query) throws IOException {
-        String url = getUrl("search?query=" + query);
+        String url = getUrl("search?query=" + encode(query));
         String json = new String(connector.get(url));
         return parser.parseSearchResult(json);
     }
@@ -634,7 +673,7 @@ public class TriageApi {
         } else if (limit > 200) {
             limit = 200;
         }
-        String url = getUrl("search?query=" + query + "&limit=" + limit);
+        String url = getUrl("search?query=" + encode(query) + "&limit=" + limit);
         String json = new String(connector.get(url));
         return parser.parseSearchResult(json);
     }
@@ -657,7 +696,7 @@ public class TriageApi {
      * @throws IOException if the HTTP request fails
      */
     public SearchResult search(String query, String offset) throws IOException {
-        String url = getUrl("search?query=" + query + "&offset=" + offset);
+        String url = getUrl("search?query=" + encode(query) + "&offset=" + offset);
         String json = new String(connector.get(url));
         return parser.parseSearchResult(json);
     }
@@ -688,7 +727,7 @@ public class TriageApi {
         } else if (limit > 200) {
             limit = 200;
         }
-        String url = getUrl("search?query=" + query + "&offset=" + offset + "&limit=" + limit);
+        String url = getUrl("search?query=" + encode(query) + "&offset=" + offset + "&limit=" + limit);
         String json = new String(connector.get(url));
         return parser.parseSearchResult(json);
     }
@@ -742,14 +781,14 @@ public class TriageApi {
             }
 
             for (SearchResultEntry searchResult : result.getSearchResults()) {
-                LocalDateTime sampleDate = LocalDateTime.parse(searchResult.getCompleted(), formatter);
+                LocalDateTime sampleDate = LocalDateTime.parse(formatDateTimeString(searchResult.getCompleted()), formatter);
                 if (sampleDate.isAfter(earliest) && sampleDate.isBefore(latest)) {
                     searchResults.add(searchResult);
                 }
             }
 
-            LocalDateTime firstSampleCompletion = LocalDateTime.parse(result.getSearchResults().get(0).getCompleted(), formatter);
-            LocalDateTime lastSampleCompletion = LocalDateTime.parse(result.getSearchResults().get(result.getSearchResults().size() - 1).getCompleted(), formatter);
+            LocalDateTime firstSampleCompletion = LocalDateTime.parse(formatDateTimeString(result.getSearchResults().get(0).getCompleted()), formatter);
+            LocalDateTime lastSampleCompletion = LocalDateTime.parse(formatDateTimeString(result.getSearchResults().get(result.getSearchResults().size() - 1).getCompleted()), formatter);
 
             if (firstSampleCompletion.isBefore(earliest) || firstSampleCompletion.isAfter(latest) || lastSampleCompletion.isBefore(earliest) || lastSampleCompletion.isAfter(latest)) {
                 break;
