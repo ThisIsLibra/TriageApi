@@ -18,12 +18,19 @@ package triageapi;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import json.JsonParser;
 import model.FileUploadResult;
 import model.Sample;
 import model.SearchResult;
+import model.SearchResultEntry;
 import model.StaticReport;
+import model.TargetDesc;
 import model.TriageReport;
 import network.Connector;
 import org.apache.http.entity.mime.MultipartEntityBuilder;
@@ -52,6 +59,10 @@ import org.json.JSONObject;
  * One can also use <code>mvn package</code> to generate JARs with JavaDoc, as
  * well as source code. This will also generate source code in the target
  * folder.
+ *
+ * One can also install this library in the local Maven repository, as is
+ * explained here:
+ * https://maven.apache.org/guides/mini/guide-3rd-party-jars-local.html
  *
  * @author Max 'Libra' Kersten [@LibraAnalysis, https://maxkersten.nl]
  */
@@ -91,9 +102,9 @@ public class TriageApi {
         }
 
         //The connector needs the API key, as it is needed in a header in each request
-        connector = new Connector(key);
+        this.connector = new Connector(key);
         //The parser only has to be initialised once, which is why it is done in the constructor
-        parser = new JsonParser();
+        this.parser = new JsonParser();
     }
 
     /**
@@ -170,6 +181,136 @@ public class TriageApi {
     }
 
     /**
+     * Downloads the raw malware sample from Triage, based on the given sample
+     * ID
+     *
+     * @param report the TriageReport of the sample that should be downloaded
+     * @return a native byte array that contains the raw sample
+     * @throws IOException if the HTTP request fails
+     */
+    public byte[] downloadSample(TriageReport report) throws IOException {
+        return downloadSample(report.getSample().getId());
+    }
+
+    /**
+     * Downloads the raw malware sample from Triage, based on the given
+     * TargetDesc. A TargetDesc is either a task or sample within the Triage
+     * Report.
+     *
+     * @param targetDesc the TargetDesc that contains the ID of the sample that
+     * should be downloaded
+     * @return a native byte array that contains the raw sample
+     * @throws IOException if the HTTP request fails
+     */
+    public byte[] downloadSample(TargetDesc targetDesc) throws IOException {
+        return downloadSample(targetDesc.getId());
+    }
+
+    /**
+     * Downloads the raw malware sample from Triage, based on the given sample
+     * object
+     *
+     * @param sample the sample object that contains the ID of the sample that
+     * should be downloaded
+     * @return a native byte array that contains the raw sample
+     * @throws IOException if the HTTP request fails
+     */
+    public byte[] downloadSample(Sample sample) throws IOException {
+        return downloadSample(sample.getId());
+    }
+
+    /**
+     * Download samples in bulk, based on the given sample IDs
+     *
+     * @param sampleIds the sample IDs of the samples to be downloaded
+     * @return a mapping with sample IDs as a key, and the sample as a boxed
+     * byte array
+     * @throws IOException if the HTTP request fails, or if the given list of
+     * IDs is null or empty
+     */
+    public Map<String, Byte[]> downloadSamples(List<String> sampleIds) throws IOException {
+        if (sampleIds == null || sampleIds.isEmpty()) {
+            throw new IOException("The given list of IDs is null or empty!");
+        }
+        Map<String, Byte[]> results = new HashMap<>();
+        for (String sampleId : sampleIds) {
+            //Gets the native byte array from the individual download function
+            byte[] bytes = downloadSample(sampleId);
+            //Creates a boxed byte array, which is required in the mapping
+            Byte[] sample = new Byte[bytes.length];
+
+            //Box all values
+            for (int i = 0; i < bytes.length; i++) {
+                sample[i] = bytes[i];
+            }
+            //Add the entry to the mapping
+            results.put(sampleId, sample);
+        }
+        return results;
+    }
+
+    /**
+     * Download samples in bulk, based on the given reports
+     *
+     * @param reports the reports of the samples to download
+     * @return a mapping with sample IDs as a key, and the sample as a boxed
+     * byte array
+     * @throws IOException if the HTTP request fails, or if the given array of
+     * reports is null or empty
+     */
+    public Map<String, Byte[]> downloadSamples(TriageReport[] reports) throws IOException {
+        if (reports == null || reports.length < 1) {
+            throw new IOException("The given array of reports is null or empty!");
+        }
+        List<String> sampleIds = new ArrayList<>();
+        for (TriageReport report : reports) {
+            sampleIds.add(report.getSample().getId());
+        }
+        return downloadSamples(sampleIds);
+
+    }
+
+    /**
+     * Download samples in bulk, based on the given sample object array
+     *
+     * @param samples the sample objects of the samples to be downloaded
+     * @return a mapping with sample IDs as a key, and the sample as a boxed
+     * byte array
+     * @throws IOException if the HTTP request fails, or if the given array of
+     * reports is null or empty
+     */
+    public Map<String, Byte[]> downloadSamples(Sample[] samples) throws IOException {
+        if (samples == null || samples.length < 1) {
+            throw new IOException("The given array of sample objects is null or empty!");
+        }
+        List<String> sampleIds = new ArrayList<>();
+        for (Sample sample : samples) {
+            sampleIds.add(sample.getId());
+        }
+        return downloadSamples(sampleIds);
+    }
+
+    /**
+     * Download samples in bulk, based on the given TargetDesc object array
+     *
+     * @param targetDescs the TargetDesc objects of the samples to be downloaded
+     * @return a mapping with sample IDs as a key, and the sample as a boxed
+     * byte array
+     * @throws IOException if the HTTP request fails, or if the given array of
+     * reports is null or empty
+     */
+    public Map<String, Byte[]> downloadSamples(TargetDesc[] targetDescs) throws IOException {
+        if (targetDescs == null || targetDescs.length < 1) {
+            throw new IOException("The given array of TargetDesc objects is null or empty!");
+        }
+        List<String> sampleIds = new ArrayList<>();
+        for (TargetDesc targetDesc : targetDescs) {
+            sampleIds.add(targetDesc.getId());
+        }
+        return downloadSamples(sampleIds);
+    }
+
+    /**
      * Gets sample objects (meaning not raw samples) from Triage. The given
      * boolean specifies of these samples are only those uploaded from this
      * account, or if they are to be taken from the latest public sample set.
@@ -198,7 +339,8 @@ public class TriageApi {
      *
      * @param file the file to upload and analyse on Triage
      * @return the file upload result within a single object
-     * @throws IOException if the HTTP request fails
+     * @throws IOException if the HTTP request fails, or if a folder is selected
+     * instead of a file
      */
     public FileUploadResult uploadSample(File file) throws IOException {
         String url = getUrl("samples");
@@ -208,6 +350,53 @@ public class TriageApi {
 
         String json = new String(connector.post(url, builder));
         return parser.parseFileUpload(json);
+    }
+
+    /**
+     * Uploads all files in the given folder, excluding subdirectories
+     *
+     * @param folder the folder to upload all files from, excluding
+     * subdirectories
+     * @return the file upload results for all uploaded files, in a list. This
+     * list can be empty if the given folder does not contain any files
+     * @throws IOException if the HTTP request fails
+     */
+    public List<FileUploadResult> uploadFolder(File folder) throws IOException {
+        if (folder.isFile()) {
+            throw new IOException("The given java.io.File object refers to a file, whilst it should refer to a folder!");
+        }
+
+        List<FileUploadResult> results = new ArrayList<>();
+
+        for (File file : folder.listFiles()) {
+            if (file.isFile()) {
+                FileUploadResult result = uploadSample(file);
+                results.add(result);
+            }
+        }
+        return results;
+    }
+
+    /**
+     * Uploads data to the sandbox: either a single file, or all files in the
+     * given folder. This depends on the given java.io.File object's path.
+     *
+     * @param object the java.io.File object that points to data that should be
+     * uploaded to the sandbox
+     * @return the file upload results for all uploaded files, in a list. This
+     * list can be empty if the given folder does not contain any files. If the
+     * given object refers to a file, a list with one item is returned.
+     * @throws IOException if the HTTP request fails
+     */
+    public List<FileUploadResult> upload(File object) throws IOException {
+        if (object.isFile()) {
+            List<FileUploadResult> results = new ArrayList<>();
+            FileUploadResult result = uploadSample(object);
+            results.add(result);
+            return results;
+        } else {
+            return uploadFolder(object);
+        }
     }
 
     /**
@@ -502,5 +691,102 @@ public class TriageApi {
         String url = getUrl("search?query=" + query + "&offset=" + offset + "&limit=" + limit);
         String json = new String(connector.get(url));
         return parser.parseSearchResult(json);
+    }
+
+    /**
+     * Searches for the given query in the given cloud (either public or
+     * private) and returns a list of SearchResultEntry objects. This list
+     * contains all samples that match the given query, and were completed on
+     * Triage within the given date ranges.
+     *
+     * The upper limit of 200 samples per search query is still maintained
+     * within this function, as multiple function calls are used to iterate
+     * through the sample set of Triage between the two given moments in time.
+     *
+     * Note that the bigger the timespan between the two moments is, the longer
+     * this function takes to execute. As such, one should use this with
+     * caution!
+     *
+     * More information about queries on Triage can be found here:
+     * https://hatching.io/blog/tt-2020-10-23/ and https://tria.ge/s/
+     *
+     * @param query the query to search for
+     * @param earliest the earliest moment in time from when samples should be
+     * included, if they match the given query
+     * @param latest the latest moment in time from when samples should be
+     * included, if they match the given query
+     * @return a list of search results, which contains all search results. If
+     * no results were found, an empty list is returned!
+     * @throws IOException if the HTTP request fails, or if the earliest date is
+     * later than the system's current date
+     */
+    public List<SearchResultEntry> search(String query, LocalDateTime earliest, LocalDateTime latest) throws IOException {
+        List<SearchResultEntry> searchResults = new ArrayList<>();
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
+
+        LocalDateTime now = LocalDateTime.now();
+        if (earliest.isAfter(now)) {
+            throw new IOException("The earliest date is later than the current system time");
+        }
+
+        String nextOffset = latest.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'"));;
+        SearchResult result = null;
+
+        while (true) {
+            result = search(query, nextOffset, 200);
+            nextOffset = result.getNextOffset();
+
+            if (result.isEmpty()) {
+                break;
+            }
+
+            for (SearchResultEntry searchResult : result.getSearchResults()) {
+                LocalDateTime sampleDate = LocalDateTime.parse(searchResult.getCompleted(), formatter);
+                if (sampleDate.isAfter(earliest) && sampleDate.isBefore(latest)) {
+                    searchResults.add(searchResult);
+                }
+            }
+
+            LocalDateTime firstSampleCompletion = LocalDateTime.parse(result.getSearchResults().get(0).getCompleted(), formatter);
+            LocalDateTime lastSampleCompletion = LocalDateTime.parse(result.getSearchResults().get(result.getSearchResults().size() - 1).getCompleted(), formatter);
+
+            if (firstSampleCompletion.isBefore(earliest) || firstSampleCompletion.isAfter(latest) || lastSampleCompletion.isBefore(earliest) || lastSampleCompletion.isAfter(latest)) {
+                break;
+            }
+
+        }
+
+        return searchResults;
+    }
+
+    /**
+     * Searches for the given query in the given cloud (either public or
+     * private) and returns a list of SearchResultEntry objects. This list
+     * contains all samples that match the given query, and were completed on
+     * Triage between the earliest given moment and the moment this function was
+     * called.
+     *
+     * The upper limit of 200 samples per search query is still maintained
+     * within this function, as multiple function calls are used to iterate
+     * through the sample set of Triage between the two given moments in time.
+     *
+     * Note that the bigger the timespan between the two moments is, the longer
+     * this function takes to execute. As such, one should use this with
+     * caution!
+     *
+     * More information about queries on Triage can be found here:
+     * https://hatching.io/blog/tt-2020-10-23/ and https://tria.ge/s/
+     *
+     * @param query the query to search for
+     * @param earliest the earliest moment in time from when samples should be
+     * included, if they match the given query
+     * @return a list of search results, which contains all search results. If
+     * no results were found, an empty list is returned!
+     * @throws IOException if the HTTP request fails, or if the earliest date is
+     * later than the system's current date
+     */
+    public List<SearchResultEntry> search(String query, LocalDateTime earliest) throws IOException {
+        return search(query, earliest, LocalDateTime.now());
     }
 }
