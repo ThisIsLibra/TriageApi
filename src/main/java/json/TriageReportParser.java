@@ -57,7 +57,7 @@ public class TriageReportParser extends GenericParser {
      * @param rawJson the JSON value to parse
      * @return the object based on the given JSON value
      */
-    public TriageReport parse(String rawJson) {
+    public TriageReport parse(String rawJson, String taskId) {
         if (rawJson == null) {
             return new TriageReport();
         }
@@ -74,7 +74,7 @@ public class TriageReportParser extends GenericParser {
         //debug is skipped
         Dump[] dumped = optDumpArray(json.optJSONArray("dumped"));
         Extract[] extracted = optExtractArray(json.optJSONArray("extracted"));
-        return new TriageReport(version, sample, task, errors, analysis, processes, signatures, networkReport, dumped, extracted);
+        return new TriageReport(version, taskId, sample, task, errors, analysis, processes, signatures, networkReport, dumped, extracted);
 
     }
 

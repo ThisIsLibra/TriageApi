@@ -25,15 +25,19 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import json.JsonParser;
+import model.Dump;
 import model.FileUploadResult;
 import model.Sample;
 import model.SearchResult;
 import model.SearchResultEntry;
+import model.Signature;
 import model.StaticReport;
 import model.TargetDesc;
 import model.TriageReport;
@@ -90,6 +94,12 @@ public class TriageApi {
     private final JsonParser parser;
 
     /**
+     * A list that can be used to cache all families, avoiding reloading this
+     * full list every time
+     */
+    private List<String> allFamilies;
+
+    /**
      * Create an instance of the TriageApi class that uses a given API key to
      * connect to Triage's endpoints. One can use a private cloud account or a
      * public account, as is specified by the boolean.
@@ -140,8 +150,15 @@ public class TriageApi {
         }
     }
 
+    /**
+     * Gets the yyyy-mm-dd hh:mm format string from the given input
+     *
+     * @param input the input to scan
+     * @return the found date time format if found, or an empty string if no
+     * match is found
+     */
     private String formatDateTimeString(String input) {
-        Pattern pattern = Pattern.compile("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}");
+        Pattern pattern = Pattern.compile("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}");
         Matcher matcher = pattern.matcher(input);
 
         String match = null;
@@ -160,6 +177,26 @@ public class TriageApi {
     }
 
     /**
+     * Returns a boxed byte array based on the given native byte array. The
+     * reason that a boxed array is required, is that native types cannot be
+     * used in lists, mappings, nor sets.
+     *
+     * @param input the byte array to convert into a boxed byte array
+     * @return a boxed bye array with the same values as the input array
+     */
+    private Byte[] box(byte[] input) {
+        //Creates a boxed byte array, which is required in the mapping
+        Byte[] output = new Byte[input.length];
+
+        //Box all values
+        for (int i = 0; i < input.length; i++) {
+            output[i] = input[i];
+        }
+
+        return output;
+    }
+
+    /**
      * Get the Triage report of a specific sample. This is the report of the
      * dynamic execution, if it is finished
      *
@@ -172,7 +209,7 @@ public class TriageApi {
      */
     public TriageReport getTriageReport(String sampleId, String taskId) throws IOException {
         String json = new String(connector.get(getUrl("samples/" + sampleId + "/" + taskId + "/report_triage.json")));
-        return parser.parseTriageReport(json);
+        return parser.parseTriageReport(json, taskId);
     }
 
     /**
@@ -275,13 +312,10 @@ public class TriageApi {
         for (String sampleId : sampleIds) {
             //Gets the native byte array from the individual download function
             byte[] bytes = downloadSample(sampleId);
-            //Creates a boxed byte array, which is required in the mapping
-            Byte[] sample = new Byte[bytes.length];
 
-            //Box all values
-            for (int i = 0; i < bytes.length; i++) {
-                sample[i] = bytes[i];
-            }
+            //Boxes the given byte array
+            Byte[] sample = box(bytes);
+
             //Add the entry to the mapping
             results.put(sampleId, sample);
         }
@@ -762,14 +796,14 @@ public class TriageApi {
     public List<SearchResultEntry> search(String query, LocalDateTime earliest, LocalDateTime latest) throws IOException {
         List<SearchResultEntry> searchResults = new ArrayList<>();
 
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm'Z'");
 
         LocalDateTime now = LocalDateTime.now();
         if (earliest.isAfter(now)) {
             throw new IOException("The earliest date is later than the current system time");
         }
 
-        String nextOffset = latest.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'"));;
+        String nextOffset = latest.format(formatter);;
         SearchResult result = null;
 
         while (true) {
@@ -827,5 +861,179 @@ public class TriageApi {
      */
     public List<SearchResultEntry> search(String query, LocalDateTime earliest) throws IOException {
         return search(query, earliest, LocalDateTime.now());
+    }
+
+    /**
+     * Gets all associated families that were detected in the sandbox based on
+     * the given signatures.
+     *
+     * The allowCaching boolean defines if the list of all families, which is
+     * kept as a global object in this class, can remain cached, or if it needs
+     * to be recreated when this function is called. The first time any function
+     * is called that uses this list, it is instantiated, regardless of the
+     * boolean's value.
+     *
+     * @param signatures the list of signatures to match
+     * @param allowCaching if the global family list may be cached, or not
+     * @return a list of families that were detected for the given signatures.
+     * This list can be empty if no matches have been found.
+     * @throws IOException if the HTTP request fails
+     */
+    public Set<String> getFamilies(Signature[] signatures, boolean allowCaching) throws IOException {
+        Set<String> families = new HashSet<>();
+
+        if (allFamilies == null || (allFamilies != null && allowCaching == false)) {
+            allFamilies = getSupportedFamilies();
+
+            for (int i = 0; i < allFamilies.size(); i++) {
+                String familyName = allFamilies.get(i);
+                familyName = familyName.toLowerCase();
+                allFamilies.set(i, familyName);
+
+                if (familyName.contains("_")) {
+                    String newName = familyName.replace("_", " ");
+                    allFamilies.add(newName);
+                }
+            }
+        }
+
+        for (int i = 0; i < signatures.length; i++) {
+            String name = signatures[i].getName().toLowerCase();
+            if (allFamilies.contains(name)) {
+                families.add(name);
+            }
+        }
+        return families;
+    }
+
+    /**
+     * Gets all associated families that were detected in the sandbox based on
+     * the given report.
+     *
+     * The allowCaching boolean defines if the list of all families, which is
+     * kept as a global object in this class, can remain cached, or if it needs
+     * to be recreated when this function is called. The first time any function
+     * is called that uses this list, it is instantiated, regardless of the
+     * boolean's value.
+     *
+     * @param report the report to get the families from
+     * @param allowCaching if the global family list may be cached, or not
+     * @return a list of families that were detected for the given signatures.
+     * This list can be empty if no matches have been found.
+     * @throws IOException if the HTTP request fails
+     */
+    public Set<String> getFamilies(TriageReport report, boolean allowCaching) throws IOException {
+        Signature[] signatures = report.getSignatures();
+        return getFamilies(signatures, allowCaching);
+    }
+
+    /**
+     * Gets all associated families that were detected in the sandbox based on
+     * the given reports.
+     *
+     * The allowCaching boolean defines if the list of all families, which is
+     * kept as a global object in this class, can remain cached, or if it needs
+     * to be recreated when this function is called. The first time any function
+     * is called that uses this list, it is instantiated, regardless of the
+     * boolean's value.
+     *
+     * @param reports a list of all reports that need to be matched
+     * @param allowCaching if the global family list may be cached, or not
+     * @return a mapping where the key is each of the given reports, and the
+     * value is the resulting set of family matches. The list can be empty if no
+     * family matches were found.
+     * @throws IOException if the HTTP request fails
+     */
+    public Map<TriageReport, Set<String>> getFamilies(List<TriageReport> reports, boolean allowCaching) throws IOException {
+        Map<TriageReport, Set<String>> mapping = new HashMap<>();
+
+        for (TriageReport report : reports) {
+            Set<String> families = getFamilies(report, allowCaching);
+            mapping.put(report, families);
+        }
+
+        return mapping;
+    }
+
+    /**
+     * Gets all associated families that were detected in the sandbox based on
+     * the given sample and task ID.
+     *
+     * The allowCaching boolean defines if the list of all families, which is
+     * kept as a global object in this class, can remain cached, or if it needs
+     * to be recreated when this function is called. The first time any function
+     * is called that uses this list, it is instantiated, regardless of the
+     * boolean's value.
+     *
+     * @param sampleId the id of the sample on Triage
+     * @param taskId the task to get the report from
+     * @param allowCaching if the global family list may be cached, or not
+     * @return a list of families that were detected for the given sample. This
+     * list can be empty if no matches have been found.
+     * @throws IOException if the HTTP request fails
+     */
+    public Set<String> getFamilies(String sampleId, String taskId, boolean allowCaching) throws IOException {
+        TriageReport report = getTriageReport(sampleId, taskId);
+        return getFamilies(report, allowCaching);
+    }
+
+    /**
+     * Gets a dumped section, based on a given sample ID, task ID, and the name
+     * of the dumped file
+     *
+     * @param sampleId the sample's ID
+     * @param taskId the task's ID
+     * @param dumpName the name of the dumped file, as present in Dump.getName()
+     * @return the raw section as a byte array
+     * @throws IOException if the HTTP request fails
+     */
+    public byte[] getDumpedSection(String sampleId, String taskId, String dumpName) throws IOException {
+        String url = getUrl("samples/" + sampleId + "/" + taskId + "/" + dumpName);
+        return connector.get(url);
+    }
+
+    /**
+     * Gets all dumped sections for the given report
+     *
+     * @param report the report to download all dumped sections from
+     * @return a mapping where the key is the dumped section's name (as present
+     * in Dump.getName()), and the value is the raw section in a boxed byte
+     * array
+     * @throws IOException if the HTTP request fails
+     */
+    public Map<String, Byte[]> getDumpedSections(TriageReport report) throws IOException {
+        Map<String, Byte[]> mapping = new HashMap<>();
+
+        for (Dump dump : report.getDumped()) {
+            byte[] rawDump = getDumpedSection(report.getSample().getId(), report.getTaskId(), dump.getName());
+
+            //Creates a boxed byte array, which is required in the mapping
+            Byte[] dumpedSection = box(rawDump);
+
+            mapping.put(dump.getName(), dumpedSection);
+        }
+
+        return mapping;
+    }
+
+    /**
+     * Gets all dumped sections per report, for all given reports
+     *
+     * @param reports the reports to download all dumped sections from
+     * @return a mapping that contains all downloaded sections in a key-value
+     * mapping, per report, in a key-value mapping. In other words: a mapping
+     * that has reports as keys, with a mapping of all section names and the
+     * corresponding sections as a boxed byte array.
+     * @throws IOException if the HTTP request fails
+     */
+    public Map<TriageReport, Map<String, Byte[]>> getDumpedSections(List<TriageReport> reports) throws IOException {
+        Map<TriageReport, Map<String, Byte[]>> mapping = new HashMap<>();
+
+        for (TriageReport report : reports) {
+            Map<String, Byte[]> dumpedSections = getDumpedSections(report);
+            mapping.put(report, dumpedSections);
+        }
+
+        return mapping;
     }
 }

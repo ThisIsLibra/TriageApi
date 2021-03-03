@@ -101,8 +101,8 @@ public class JsonParser {
      * @param json the JSON value to parse
      * @return the object based on the given JSON value
      */
-    public TriageReport parseTriageReport(String json) {
-        return triageReportParser.parse(json);
+    public TriageReport parseTriageReport(String json, String taskId) {
+        return triageReportParser.parse(json, taskId);
     }
 
     /**

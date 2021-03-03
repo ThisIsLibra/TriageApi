@@ -23,6 +23,7 @@ package model;
 public class TriageReport {
 
     private String version;
+    private String taskId;
     private TargetDesc sample;
     private TargetDesc task;
     private ReportTaskFailure[] errors;
@@ -36,6 +37,7 @@ public class TriageReport {
 
     public TriageReport() {
         this.version = "";
+        this.taskId = "";
         this.sample = new TargetDesc();
         this.task = new TargetDesc();
         this.errors = new ReportTaskFailure[0];
@@ -48,8 +50,9 @@ public class TriageReport {
         this.isEmpty = true;
     }
 
-    public TriageReport(String version, TargetDesc sample, TargetDesc task, ReportTaskFailure[] errors, ReportAnalysisInfo analysis, Process[] processes, Signature[] signatures, NetworkReport networkReport, Dump[] dumped, Extract[] extracted) {
+    public TriageReport(String version, String taskId, TargetDesc sample, TargetDesc task, ReportTaskFailure[] errors, ReportAnalysisInfo analysis, Process[] processes, Signature[] signatures, NetworkReport networkReport, Dump[] dumped, Extract[] extracted) {
         this.version = version;
+        this.taskId = taskId;
         this.sample = sample;
         this.task = task;
         this.errors = errors;
@@ -68,6 +71,14 @@ public class TriageReport {
 
     public void setVersion(String version) {
         this.version = version;
+    }
+
+    public String getTaskId() {
+        return taskId;
+    }
+
+    public void setTaskId(String taskid) {
+        this.taskId = taskId;
     }
 
     public TargetDesc getSample() {
