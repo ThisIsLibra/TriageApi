@@ -22,6 +22,8 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -31,20 +33,21 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import json.JsonParser;
-import model.Dump;
-import model.FileUploadResult;
-import model.Sample;
-import model.SearchResult;
-import model.SearchResultEntry;
-import model.Signature;
-import model.StaticReport;
-import model.TargetDesc;
-import model.TriageReport;
-import network.Connector;
+import triageapi.json.JsonParser;
+import triageapi.model.Dump;
+import triageapi.model.FileUploadResult;
+import triageapi.model.Sample;
+import triageapi.model.SearchResult;
+import triageapi.model.SearchResultEntry;
+import triageapi.model.Signature;
+import triageapi.model.StaticReport;
+import triageapi.model.TargetDesc;
+import triageapi.model.TriageReport;
+import triageapi.network.TriageConnector;
 import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import triageapi.model.StaticSignature;
 
 /**
  * This class serves as the single point entry for the Triage API. Using the
@@ -86,7 +89,7 @@ public class TriageApi {
      * The connector module, which handles the HTTP requests with Triage's
      * servers
      */
-    private final Connector connector;
+    private final TriageConnector connector;
 
     /**
      * The JSON parser, which returns objects to the user, instead of plain JSON
@@ -94,10 +97,10 @@ public class TriageApi {
     private final JsonParser parser;
 
     /**
-     * A list that can be used to cache all families, avoiding reloading this
-     * full list every time
+     * A string that is used to cache all families, avoiding reloading the full
+     * list of names at every request
      */
-    private List<String> allFamilies;
+    private String allFamilies;
 
     /**
      * Create an instance of the TriageApi class that uses a given API key to
@@ -117,7 +120,7 @@ public class TriageApi {
         }
 
         //The connector needs the API key, as it is needed in a header in each request
-        this.connector = new Connector(key);
+        this.connector = new TriageConnector(key);
         //The parser only has to be initialised once, which is why it is done in the constructor
         this.parser = new JsonParser();
     }
@@ -133,6 +136,20 @@ public class TriageApi {
      */
     private String getUrl(String appendix) {
         return apiBase + appendix;
+    }
+
+    /**
+     * Converts a given LocalDateTime object into an object that represents the
+     * exact same moment in time, but in the UTC time zone. Note that this
+     * function assumes that the input's time zone is equal to the system's time
+     * zone
+     *
+     * @param input the object to be converted
+     * @return the converted object
+     */
+    private LocalDateTime setToUtc(LocalDateTime input) {
+        ZonedDateTime zonedEarliest = input.atZone(ZoneId.systemDefault());
+        return zonedEarliest.withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime();
     }
 
     /**
@@ -721,6 +738,9 @@ public class TriageApi {
      * Triage API will return a maximum of 50 results. Several of the function
      * overloads accept a maximum value as an argument.
      *
+     * Note that the offset should be UTC based, as Triage works based on the
+     * UTC time zone.
+     *
      * More information about queries on Triage can be found here:
      * https://hatching.io/blog/tt-2020-10-23/ and https://tria.ge/s/
      *
@@ -744,6 +764,9 @@ public class TriageApi {
      * results is given as the third argument in this function. The maximum
      * amount for the limit is 200. Any value higher than that will result in
      * the usage of 200 as the limit.
+     *
+     * Note that the offset should be UTC based, as Triage works based on the
+     * UTC time zone.
      *
      * More information about queries on Triage can be found here:
      * https://hatching.io/blog/tt-2020-10-23/ and https://tria.ge/s/
@@ -776,6 +799,11 @@ public class TriageApi {
      * within this function, as multiple function calls are used to iterate
      * through the sample set of Triage between the two given moments in time.
      *
+     * Note that both the earliest and latest variables should be based upon
+     * this system's time zone, as they are converted into UTC within this API.
+     * The conversion to UTC is mandatory, as Triage solemnly works with the UTC
+     * time zone.
+     *
      * Note that the bigger the timespan between the two moments is, the longer
      * this function takes to execute. As such, one should use this with
      * caution!
@@ -794,11 +822,15 @@ public class TriageApi {
      * later than the system's current date
      */
     public List<SearchResultEntry> search(String query, LocalDateTime earliest, LocalDateTime latest) throws IOException {
+        earliest = setToUtc(earliest);
+        latest = setToUtc(latest);
+
         List<SearchResultEntry> searchResults = new ArrayList<>();
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm'Z'");
 
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now(ZoneId.systemDefault());
+        now = setToUtc(now);
         if (earliest.isAfter(now)) {
             throw new IOException("The earliest date is later than the current system time");
         }
@@ -816,20 +848,21 @@ public class TriageApi {
 
             for (SearchResultEntry searchResult : result.getSearchResults()) {
                 LocalDateTime sampleDate = LocalDateTime.parse(formatDateTimeString(searchResult.getCompleted()), formatter);
+                sampleDate = setToUtc(sampleDate);
                 if (sampleDate.isAfter(earliest) && sampleDate.isBefore(latest)) {
                     searchResults.add(searchResult);
                 }
             }
 
             LocalDateTime firstSampleCompletion = LocalDateTime.parse(formatDateTimeString(result.getSearchResults().get(0).getCompleted()), formatter);
+            firstSampleCompletion = setToUtc(firstSampleCompletion);
             LocalDateTime lastSampleCompletion = LocalDateTime.parse(formatDateTimeString(result.getSearchResults().get(result.getSearchResults().size() - 1).getCompleted()), formatter);
+            lastSampleCompletion = setToUtc(lastSampleCompletion);
 
             if (firstSampleCompletion.isBefore(earliest) || firstSampleCompletion.isAfter(latest) || lastSampleCompletion.isBefore(earliest) || lastSampleCompletion.isAfter(latest)) {
                 break;
             }
-
         }
-
         return searchResults;
     }
 
@@ -843,6 +876,11 @@ public class TriageApi {
      * The upper limit of 200 samples per search query is still maintained
      * within this function, as multiple function calls are used to iterate
      * through the sample set of Triage between the two given moments in time.
+     *
+     * Note that both the earliest and latest variables should be based upon
+     * this system's time zone, as they are converted into UTC within this API.
+     * The conversion to UTC is mandatory, as Triage solemnly works with the UTC
+     * time zone.
      *
      * Note that the bigger the timespan between the two moments is, the longer
      * this function takes to execute. As such, one should use this with
@@ -860,7 +898,7 @@ public class TriageApi {
      * later than the system's current date
      */
     public List<SearchResultEntry> search(String query, LocalDateTime earliest) throws IOException {
-        return search(query, earliest, LocalDateTime.now());
+        return search(query, earliest, LocalDateTime.now(ZoneId.systemDefault()));
     }
 
     /**
@@ -880,25 +918,35 @@ public class TriageApi {
      * @throws IOException if the HTTP request fails
      */
     public Set<String> getFamilies(Signature[] signatures, boolean allowCaching) throws IOException {
+        List<String> toMatch = new ArrayList<>();
+
+        for (int i = 0; i < signatures.length; i++) {
+            String name = signatures[i].getName();
+            toMatch.add(name);
+        }
+        return getFamilies(toMatch, allowCaching);
+    }
+
+    public Set<String> getFamilies(List<String> toMatch, boolean allowCaching) throws IOException {
         Set<String> families = new HashSet<>();
 
         if (allFamilies == null || (allFamilies != null && allowCaching == false)) {
-            allFamilies = getSupportedFamilies();
+            allFamilies = "";
+            List<String> fetchedFamilies = getSupportedFamilies();
 
-            for (int i = 0; i < allFamilies.size(); i++) {
-                String familyName = allFamilies.get(i);
-                familyName = familyName.toLowerCase();
-                allFamilies.set(i, familyName);
+            for (int i = 0; i < fetchedFamilies.size(); i++) {
+                String familyName = fetchedFamilies.get(i).toLowerCase();
+                allFamilies += familyName + ";";
 
                 if (familyName.contains("_")) {
-                    String newName = familyName.replace("_", " ");
-                    allFamilies.add(newName);
+                    familyName = familyName.replace("_", " ");
                 }
+                allFamilies += familyName + ";";
             }
         }
 
-        for (int i = 0; i < signatures.length; i++) {
-            String name = signatures[i].getName().toLowerCase();
+        for (int i = 0; i < toMatch.size(); i++) {
+            String name = toMatch.get(i).toLowerCase();
             if (allFamilies.contains(name)) {
                 families.add(name);
             }
@@ -923,8 +971,27 @@ public class TriageApi {
      * @throws IOException if the HTTP request fails
      */
     public Set<String> getFamilies(TriageReport report, boolean allowCaching) throws IOException {
-        Signature[] signatures = report.getSignatures();
-        return getFamilies(signatures, allowCaching);
+        List<String> toMatch = new ArrayList<>();
+
+        for (Signature signature : report.getSignatures()) {
+            toMatch.add(signature.getName());
+        }
+
+        StaticReport staticReport = getStaticReport(report.getSample().getId());
+
+        Set<String> tags = new HashSet<>();
+        tags.addAll(staticReport.getStaticAnalysis().getTags());
+
+        for (StaticSignature staticSignature : staticReport.getStaticSignatures()) {
+            tags.addAll(staticSignature.getTags());
+        }
+
+        for (String tag : tags) {
+            tag = tag.replace("family:", "");
+            toMatch.add(tag);
+        }
+
+        return getFamilies(toMatch, allowCaching);
     }
 
     /**
@@ -944,7 +1011,7 @@ public class TriageApi {
      * family matches were found.
      * @throws IOException if the HTTP request fails
      */
-    public Map<TriageReport, Set<String>> getFamilies(List<TriageReport> reports, boolean allowCaching) throws IOException {
+    public Map<TriageReport, Set<String>> getFamilies(TriageReport[] reports, boolean allowCaching) throws IOException {
         Map<TriageReport, Set<String>> mapping = new HashMap<>();
 
         for (TriageReport report : reports) {
