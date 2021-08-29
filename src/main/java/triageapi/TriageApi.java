@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Max 'Libra' Kersten [@LibraAnalysis, https://maxkersten.nl]
+ * Copyright (C) 2020 Max 'Libra' Kersten [@Libranalysis, https://maxkersten.nl]
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -47,36 +47,39 @@ import triageapi.network.TriageConnector;
 import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import triageapi.model.SampleEvents;
 import triageapi.model.StaticSignature;
 
 /**
  * This class serves as the single point entry for the Triage API. Using the
  * functions within this class, one can access various API endpoints. These
- * functions will return objects that are within this class, unless a native
- * approach is better fit. An example of a embedded object that is returned, is
- * a TriageReport. This object contains all information regarding a dynamic
- * analysis result. Alternatively, downloading a malware sample from a
- * submission is returned as a byte array, which can then be used in whatever
- * way the user sees fit.
- *
- * Note that each object has a <code>isEmpty</em> boolean, via which one can
- * check if the object is empty or not. This is done to ensure that all fields
- * within the object can be accessed safely, meaning there is no field that can
- * be null.
- *
- * To build a JAR with all dependencies in it:
- *
- * <code>mvn clean compile assembly:single</code>
- *
+ * functions will return objects that are within this project, unless a native
+ * approach is better fit.<br>
+ * <br>
+ * An example of a embedded object that is returned, is a
+ * <code>TriageReport</code>. This object contains all information regarding a
+ * dynamic analysis result. Alternatively, the download of a sample returns a
+ * <code>byte[]</code>, which can then be used in whatever way the user sees
+ * fit.<br>
+ * <br>
+ * Note that each embedded object has an <code>isEmpty</code> boolean, via which
+ * one can check if the object is empty or not. This is done to ensure that all
+ * fields within the object can be accessed safely, meaning there is no field
+ * that can be null.<br>
+ * <br>
+ * To build a JAR with all dependencies in it:<br>
+ * <br>
+ * <code>mvn clean compile assembly:single</code><br>
+ * <br>
  * One can also use <code>mvn package</code> to generate JARs with JavaDoc, as
  * well as source code. This will also generate source code in the target
- * folder.
- *
- * One can also install this library in the local Maven repository, as is
+ * folder.<br>
+ * <br>
+ * One can also install this library in a local Maven repository, as is
  * explained here:
  * https://maven.apache.org/guides/mini/guide-3rd-party-jars-local.html
  *
- * @author Max 'Libra' Kersten [@LibraAnalysis, https://maxkersten.nl]
+ * @author Max 'Libra' Kersten [@Libranalysis, https://maxkersten.nl]
  */
 public class TriageApi {
 
@@ -126,7 +129,7 @@ public class TriageApi {
     }
 
     /**
-     * A non-exposed function that adds an appendix to the set base URL (either
+     * A private function that adds an appendix to the set base URL (either
      * Triage's public or private cloud). Note that the API base URL already
      * ends with a forward slash.
      *
@@ -139,10 +142,10 @@ public class TriageApi {
     }
 
     /**
-     * Converts a given LocalDateTime object into an object that represents the
-     * exact same moment in time, but in the UTC time zone. Note that this
-     * function assumes that the input's time zone is equal to the system's time
-     * zone
+     * A private function that converts a given LocalDateTime object into an
+     * object that represents the exact same moment in time, but in the UTC time
+     * zone. Note that this function assumes that the input's time zone is equal
+     * to the system's time zone
      *
      * @param input the object to be converted
      * @return the converted object
@@ -153,10 +156,11 @@ public class TriageApi {
     }
 
     /**
-     * Function to URL encode a given string
+     * A private function to URL encode a given string
      *
      * @param toEncode the string to encode
-     * @return the encoded string
+     * @return the encoded string, or an empty string if the UTF-8 charset
+     * cannot be found
      */
     private String encode(String toEncode) {
         try {
@@ -168,7 +172,8 @@ public class TriageApi {
     }
 
     /**
-     * Gets the yyyy-mm-dd hh:mm format string from the given input
+     * A private function that ets the yyyy-mm-dd hh:mm format string from the
+     * given input
      *
      * @param input the input to scan
      * @return the found date time format if found, or an empty string if no
@@ -194,9 +199,9 @@ public class TriageApi {
     }
 
     /**
-     * Returns a boxed byte array based on the given native byte array. The
-     * reason that a boxed array is required, is that native types cannot be
-     * used in lists, mappings, nor sets.
+     * A private function that returns a boxed byte array, based on the given
+     * native byte array. A boxed array is required because native types cannot
+     * be used in lists, mappings, nor sets.
      *
      * @param input the byte array to convert into a boxed byte array
      * @return a boxed bye array with the same values as the input array
@@ -215,7 +220,8 @@ public class TriageApi {
 
     /**
      * Get the Triage report of a specific sample. This is the report of the
-     * dynamic execution, if it is finished
+     * dynamic execution. Note that it is only accessible once the sandbox
+     * execution has finished.
      *
      * @param sampleId the sample ID that Triage gave it when the file was
      * uploaded
@@ -245,8 +251,8 @@ public class TriageApi {
     }
 
     /**
-     * Gets a sample object (not the raw malware sample) based on the given
-     * sample ID
+     * Gets a sample object (<b>not</b> the raw malware sample) based on the
+     * given sample ID
      *
      * @param sampleId the sample ID that Triage gave it when the file was
      * uploaded
@@ -266,11 +272,13 @@ public class TriageApi {
      * @param sampleId the sample ID that Triage gave it when the file was
      * uploaded
      * @return a native byte array that contains the raw sample
-     * @throws IOException if the HTTP request fails
+     * @throws IOException if the HTTP request fails, or if an internal server
+     * error occurs
      */
     public byte[] downloadSample(String sampleId) throws IOException {
         String url = getUrl("samples/" + sampleId + "/sample");
-        return connector.get(url);
+        byte[] sample = connector.get(url);
+        return sample;
     }
 
     /**
@@ -279,7 +287,8 @@ public class TriageApi {
      *
      * @param report the TriageReport of the sample that should be downloaded
      * @return a native byte array that contains the raw sample
-     * @throws IOException if the HTTP request fails
+     * @throws IOException if the HTTP request fails, or if an internal server
+     * error occurs
      */
     public byte[] downloadSample(TriageReport report) throws IOException {
         return downloadSample(report.getSample().getId());
@@ -293,7 +302,8 @@ public class TriageApi {
      * @param targetDesc the TargetDesc that contains the ID of the sample that
      * should be downloaded
      * @return a native byte array that contains the raw sample
-     * @throws IOException if the HTTP request fails
+     * @throws IOException if the HTTP request fails, or if an internal server
+     * error occurs
      */
     public byte[] downloadSample(TargetDesc targetDesc) throws IOException {
         return downloadSample(targetDesc.getId());
@@ -306,49 +316,73 @@ public class TriageApi {
      * @param sample the sample object that contains the ID of the sample that
      * should be downloaded
      * @return a native byte array that contains the raw sample
-     * @throws IOException if the HTTP request fails
+     * @throws IOException if the HTTP request fails, or if an internal server
+     * error occurs
      */
     public byte[] downloadSample(Sample sample) throws IOException {
         return downloadSample(sample.getId());
     }
 
     /**
-     * Download samples in bulk, based on the given sample IDs
+     * Download samples in bulk, based on the given sample IDs. One or more
+     * samples might be missing from the returned mapping if exceptions are
+     * suppressed. All samples that were downloaded correctly will be
+     * returned.<br>
+     * <br>
+     * If exceptions are not suppressed, all correctly downloaded samples are
+     * discarded once an exception is thrown.
      *
      * @param sampleIds the sample IDs of the samples to be downloaded
+     * @param suppressExceptions true to ignore exceptions, false to throw any
+     * encountered exception to the caller of this function
      * @return a mapping with sample IDs as a key, and the sample as a boxed
      * byte array
-     * @throws IOException if the HTTP request fails, or if the given list of
-     * IDs is null or empty
+     * @throws IOException if the HTTP request fails, if the given list of IDs
+     * is null or empty, or if an internal server error occurs
      */
-    public Map<String, Byte[]> downloadSamples(List<String> sampleIds) throws IOException {
+    public Map<String, Byte[]> downloadSamples(List<String> sampleIds, boolean suppressExceptions) throws IOException {
         if (sampleIds == null || sampleIds.isEmpty()) {
             throw new IOException("The given list of IDs is null or empty!");
         }
         Map<String, Byte[]> results = new HashMap<>();
         for (String sampleId : sampleIds) {
-            //Gets the native byte array from the individual download function
-            byte[] bytes = downloadSample(sampleId);
+            try {
+                //Gets the native byte array from the individual download function
+                byte[] bytes = downloadSample(sampleId);
 
-            //Boxes the given byte array
-            Byte[] sample = box(bytes);
+                //Boxes the given byte array
+                Byte[] sample = box(bytes);
 
-            //Add the entry to the mapping
-            results.put(sampleId, sample);
+                //Add the entry to the mapping
+                results.put(sampleId, sample);
+            } catch (IOException ex) {
+                //If the function should suppress exceptions, the error is ignored
+                if (suppressExceptions == false) {
+                    throw ex;
+                }
+            }
         }
         return results;
     }
 
     /**
-     * Download samples in bulk, based on the given reports
+     * Download samples in bulk, based on the given reports. One or more samples
+     * might be missing from the returned mapping if the exceptions are
+     * suppressed. All samples that were downloaded correctly will be
+     * returned.<br>
+     * <br>
+     * If exceptions are not suppressed, all correctly downloaded samples are
+     * discarded once an exception is thrown.
      *
      * @param reports the reports of the samples to download
+     * @param suppressExceptions true to ignore exceptions, false to throw any
+     * encountered exception to the caller of this function
      * @return a mapping with sample IDs as a key, and the sample as a boxed
      * byte array
-     * @throws IOException if the HTTP request fails, or if the given array of
-     * reports is null or empty
+     * @throws IOException if the HTTP request fails, if the given array of
+     * reports is null or empty, or if an internal server error occurs
      */
-    public Map<String, Byte[]> downloadSamples(TriageReport[] reports) throws IOException {
+    public Map<String, Byte[]> downloadSamples(TriageReport[] reports, boolean suppressExceptions) throws IOException {
         if (reports == null || reports.length < 1) {
             throw new IOException("The given array of reports is null or empty!");
         }
@@ -356,20 +390,28 @@ public class TriageApi {
         for (TriageReport report : reports) {
             sampleIds.add(report.getSample().getId());
         }
-        return downloadSamples(sampleIds);
+        return downloadSamples(sampleIds, suppressExceptions);
 
     }
 
     /**
-     * Download samples in bulk, based on the given sample object array
+     * Download samples in bulk, based on the given sample object array. One or
+     * more samples might be missing from the returned mapping if the faulty
+     * samples are suppressed. All samples that were downloaded correctly will
+     * be returned.<br>
+     * <br>
+     * If exceptions are not suppressed, all correctly downloaded samples are
+     * discarded once an exception is thrown.
      *
      * @param samples the sample objects of the samples to be downloaded
+     * @param suppressExceptions true to ignore exceptions, false to throw any
+     * encountered exception to the caller of this function
      * @return a mapping with sample IDs as a key, and the sample as a boxed
      * byte array
-     * @throws IOException if the HTTP request fails, or if the given array of
-     * reports is null or empty
+     * @throws IOException if the HTTP request fails, if the given array of
+     * reports is null or empty, or if an internal server error occurs
      */
-    public Map<String, Byte[]> downloadSamples(Sample[] samples) throws IOException {
+    public Map<String, Byte[]> downloadSamples(Sample[] samples, boolean suppressExceptions) throws IOException {
         if (samples == null || samples.length < 1) {
             throw new IOException("The given array of sample objects is null or empty!");
         }
@@ -377,19 +419,27 @@ public class TriageApi {
         for (Sample sample : samples) {
             sampleIds.add(sample.getId());
         }
-        return downloadSamples(sampleIds);
+        return downloadSamples(sampleIds, suppressExceptions);
     }
 
     /**
-     * Download samples in bulk, based on the given TargetDesc object array
+     * Download samples in bulk, based on the given TargetDesc object array. One
+     * or more samples might be missing from the returned mapping if the faulty
+     * samples are suppressed. All samples that were downloaded correctly will
+     * be returned.<br>
+     * <br>
+     * If the faulty samples are not suppressed, all correctly downloaded
+     * samples are discarded once an exception is thrown.
      *
      * @param targetDescs the TargetDesc objects of the samples to be downloaded
+     * @param suppressExceptions true to ignore exceptions, false to throw any
+     * encountered exception to the caller of this function
      * @return a mapping with sample IDs as a key, and the sample as a boxed
      * byte array
-     * @throws IOException if the HTTP request fails, or if the given array of
-     * reports is null or empty
+     * @throws IOException if the HTTP request fails, if the given array of
+     * reports is null or empty, or if an internal server error occurs
      */
-    public Map<String, Byte[]> downloadSamples(TargetDesc[] targetDescs) throws IOException {
+    public Map<String, Byte[]> downloadSamples(TargetDesc[] targetDescs, boolean suppressExceptions) throws IOException {
         if (targetDescs == null || targetDescs.length < 1) {
             throw new IOException("The given array of TargetDesc objects is null or empty!");
         }
@@ -397,13 +447,18 @@ public class TriageApi {
         for (TargetDesc targetDesc : targetDescs) {
             sampleIds.add(targetDesc.getId());
         }
-        return downloadSamples(sampleIds);
+        return downloadSamples(sampleIds, suppressExceptions);
     }
 
     /**
      * Gets sample objects (meaning not raw samples) from Triage. The given
-     * boolean specifies of these samples are only those uploaded from this
-     * account, or if they are to be taken from the latest public sample set.
+     * boolean specifies if these samples are only those uploaded from this
+     * account, or if they are to be taken from the group's latest
+     * submissions.<br>
+     * <br>
+     * The <em>group</em> refers to all samples on the public environment for
+     * the public cloud, or all samples on the institution's private cloud when
+     * using a private cloud environment.
      *
      * @param ownUploadsOnly if the given samples should only be taken from the
      * currently selected account
@@ -424,11 +479,10 @@ public class TriageApi {
     }
 
     /**
-     * Uploads the file at the given path, based on the given Java native file
-     * object
+     * Uploads the file at the given path, based on the given Java file object
      *
      * @param file the file to upload and analyse on Triage
-     * @return the file upload result within a single object
+     * @return the file upload result object
      * @throws IOException if the HTTP request fails, or if a folder is selected
      * instead of a file
      */
@@ -453,7 +507,7 @@ public class TriageApi {
      */
     public List<FileUploadResult> uploadFolder(File folder) throws IOException {
         if (folder.isFile()) {
-            throw new IOException("The given java.io.File object refers to a file, whilst it should refer to a folder!");
+            throw new IOException("The given java.io.File object refers to a file, whereas it should refer to a folder!");
         }
 
         List<FileUploadResult> results = new ArrayList<>();
@@ -469,10 +523,10 @@ public class TriageApi {
 
     /**
      * Uploads data to the sandbox: either a single file, or all files in the
-     * given folder. This depends on the given java.io.File object's path.
+     * given folder. This depends on the given Java File object's path.
      *
-     * @param object the java.io.File object that points to data that should be
-     * uploaded to the sandbox
+     * @param object the file object that points to data that should be uploaded
+     * to the sandbox
      * @return the file upload results for all uploaded files, in a list. This
      * list can be empty if the given folder does not contain any files. If the
      * given object refers to a file, a list with one item is returned.
@@ -490,7 +544,19 @@ public class TriageApi {
     }
 
     /**
-     * Gets the status of the sample based on the given sample ID
+     * Gets the status of the sample at the moment of the request, based on the
+     * given sample ID. This function is a wrapper for
+     * <code>getSample(sampleId).getStatus()</code>. This function does
+     * <b>not</b> wait until the analysis of the sample is finished. If you do
+     * want to wait for the analysis to finish, please refer to
+     * <code>getSampleEvents</code> and
+     * <code>awaitSampleAnalysisCompletion</code>.<br>
+     * <br>
+     * Prior to version 1.5-stable of this API client, this function pointed to
+     * a different endpoint, which has since been deprecated by Triage. As such,
+     * this function failed. The current wrapper functionality is offered to
+     * provide backwards compatibility, and to improve the ease-of-use of this
+     * library.
      *
      * @param sampleId the sample ID that Triage gave it when the file was
      * uploaded
@@ -499,17 +565,98 @@ public class TriageApi {
      * @throws IOException if the HTTP request fails
      */
     public String getSampleStatus(String sampleId) throws IOException {
-        String url = getUrl("samples/" + sampleId + "/status");
-        String json = new String(connector.get(url));
-        JSONObject jsonObject = new JSONObject(json);
-        return jsonObject.optString("status");
+        return getSample(sampleId).getStatus();
+    }
+
+    /**
+     * Gets the statuses for all given sample IDs.This function obtains the
+     * <b>current</b> status of each given sample, meaning it will <b>not</b>
+     * wait until the sample is complete. Please refer to
+     * <code>getSampleEvents</code> and
+     * <code>awaitSampleAnalysisCompletion</code> for functions that wait until
+     * the sample analysis has finished.
+     *
+     * @param sampleIds the sample IDs to check
+     * @param suppressExceptions true to ignore exceptions, false to throw any
+     * encountered exception to the caller of this function
+     * @return a mapping where the keys are the given sample IDs, and the value
+     * of each key is that status of that sample on the moment it was requested
+     * @throws IOException if the HTTP request fails
+     */
+    public Map<String, String> getSampleStatuses(List<String> sampleIds, boolean suppressExceptions) throws IOException {
+        Map<String, String> mapping = new HashMap<>();
+
+        for (String sampleId : sampleIds) {
+            try {
+                String status = getSampleStatus(sampleId);
+                mapping.put(sampleId, status);
+            } catch (IOException ex) {
+                if (suppressExceptions == false) {
+                    throw ex;
+                }
+            }
+        }
+
+        return mapping;
+    }
+
+    /**
+     * Serving as a wrapper around <code>getSampleEvents</code>, returning the
+     * sample events for all given sample IDs.<br>
+     * <br>
+     * Note that this function only returns once <b>all</b> samples in the list
+     * have been analysed by Triage! If a large list is used, it might take a
+     * while before this function returns.If you want to know the current status
+     * of each sample, please refer to <code>getSampleStatus</code> and
+     * <code>getSampleStatuses</code>.
+     *
+     * @param sampleIds the sample IDs to check for completion
+     * @param suppressExceptions true to ignore exceptions, false to throw any
+     * encountered exception to the caller of this function
+     * @return a mapping where the keys are the given sample IDs, and the value
+     * for each key is the returned sample event object
+     * @throws IOException if the HTTP request fails
+     */
+    public Map<String, SampleEvents> awaitSampleAnalysisCompletion(List<String> sampleIds, boolean suppressExceptions) throws IOException {
+        Map<String, SampleEvents> mapping = new HashMap<>();
+
+        for (String sampleId : sampleIds) {
+            try {
+                SampleEvents sampleEvents = getSampleEvents(sampleId);
+                mapping.put(sampleId, sampleEvents);
+            } catch (IOException ex) {
+                if (suppressExceptions == false) {
+                    throw ex;
+                }
+            }
+        }
+
+        return mapping;
+    }
+
+    /**
+     * Gets the sample events for the given sample ID. This function only
+     * returns once Triage's analysis of the sample has been completed.
+     * Generally this is a few minutes once the upload is complete, but it can
+     * take more time when the service is heavily used.<br>
+     * <br>
+     * For functions that obtain the current status, please refer to
+     * <code>getSampleStatus</code> or <code>getSampleStatuses</code>.
+     *
+     * @param sampleId the ID to fetch the sample events for
+     * @return the sample events object for the given sample ID
+     * @throws IOException if the HTTP request fails
+     */
+    public SampleEvents getSampleEvents(String sampleId) throws IOException {
+        String json = new String(connector.get(getUrl("samples/" + sampleId + "/events")));
+        return parser.parseSampleEvents(json);
     }
 
     /**
      * The kernel monitor output as a string (which is the raw format) based on
      * the given sample ID and task ID. This function determines the platform
      * based on the tags that are included in the static analysis report, and
-     * will subsequently get the matching kernel monitoring output in a string.
+     * will subsequently fetch the matching kernel monitoring output.
      *
      * @param sampleId the sample ID that Triage gave it when the file was
      * uploaded
@@ -606,8 +753,8 @@ public class TriageApi {
      * Provides the given URL to the Triage sandbox.
      *
      * @param url the malicious URL to submit for analysis to Triage
-     * @return a FileUploadResult object that contains the relevant fields for
-     * this upload
+     * @return a FileUploadResult object with the relevant fields for this
+     * upload
      * @throws IOException if the HTTP request fails
      */
     public FileUploadResult uploadUrl(String url) throws IOException {
@@ -619,12 +766,30 @@ public class TriageApi {
     }
 
     /**
-     * Fetches a file from the given URL, which is then executed within the
-     * sandbox environment.
+     * Provides the given URL to the Triage sandbox.
      *
-     * @param url the malicious URL to submit for analysis to Triage
-     * @return a FileUploadResult object that contains the relevant fields for
-     * this upload
+     * @param urls the malicious URLs to submit for analysis to Triage
+     * @return a mapping where the keys are the given URLs, and the value for
+     * each key is the corresponding <code>FileUploadResult</code> object
+     * @throws IOException if the HTTP request fails
+     */
+    public Map<String, FileUploadResult> uploadUrls(List<String> urls) throws IOException {
+        Map<String, FileUploadResult> mapping = new HashMap<>();
+
+        for (String url : urls) {
+            FileUploadResult fileUploadResult = uploadUrl(url);
+            mapping.put(url, fileUploadResult);
+        }
+
+        return mapping;
+    }
+
+    /**
+     * The file at the URL is fetched and executed within the sandbox
+     * environment.
+     *
+     * @param url the malicious URLs to submit for analysis to Triage
+     * @return the corresponding <code>FileUploadResult</code> object
      * @throws IOException if the HTTP request fails
      */
     public FileUploadResult uploadSampleViaUrl(String url) throws IOException {
@@ -633,6 +798,26 @@ public class TriageApi {
 
         String json = new String(connector.post(fullUrl, input));
         return parser.parseFileUpload(json);
+    }
+
+    /**
+     * For each given URL, the file at the URL is fetched and executed within
+     * the sandbox environment.
+     *
+     * @param urls the malicious URLs to submit for analysis to Triage
+     * @return a mapping where the keys are the given URLs, and the value for
+     * each key is the corresponding <code>FileUploadResult</code> object
+     * @throws IOException if the HTTP request fails
+     */
+    public Map<String, FileUploadResult> uploadSamplesViaUrls(List<String> urls) throws IOException {
+        Map<String, FileUploadResult> mapping = new HashMap<>();
+
+        for (String url : urls) {
+            FileUploadResult result = uploadSampleViaUrl(url);
+            mapping.put(url, result);
+        }
+
+        return mapping;
     }
 
     /**
@@ -679,13 +864,14 @@ public class TriageApi {
     /**
      * Searches for the given query in the given cloud (either public or
      * private) and returns a SearchResult object. This object contains a list
-     * of all results and the search offset field. By default, the Triage API
-     * will return a maximum of 50 results. Several of the function overloads
-     * accept a maximum value as an argument, where the limit may not exceed
-     * 200. The offset field can be used to obtain more search results for the
-     * same query, beyond the given limit. The offset can be used in several of
-     * the function overloads.
-     *
+     * of all results and the search offset field.<br>
+     * <br>
+     * By default, the Triage API will return a maximum of 50 results. Several
+     * of the function overloads accept a maximum value as an argument, where
+     * the limit may not exceed 200. The offset field can be used to obtain more
+     * search results for the same query, beyond the given limit. The offset can
+     * be used in several of the function overloads.<br>
+     * <br>
      * More information about queries on Triage can be found here:
      * https://hatching.io/blog/tt-2020-10-23/ and https://tria.ge/s/
      *
@@ -702,13 +888,15 @@ public class TriageApi {
     /**
      * Searches for the given query in the given cloud (either public or
      * private) and returns a SearchResult object. This object contains a list
-     * of all results and the search offset field. The maximum amount of results
-     * is given as the second argument in this function. The maximum amount for
-     * the limit is 200. Any value higher than that will result in the usage of
-     * 200 as the limit. The offset field can be used to obtain more search
-     * results for the same query, beyond the given limit. The offset can be
-     * used in several of the function overloads.
-     *
+     * of all results and the search offset field.<br>
+     * <br>
+     * The maximum amount of results is given as the second argument in this
+     * function. The maximum amount for the limit is 200. Any value higher than
+     * that will result in the usage of 200 as the limit. The offset field can
+     * be used to obtain more search results for the same query, beyond the
+     * given limit. The offset can be used in several of the function
+     * overloads.<br>
+     * <br>
      * More information about queries on Triage can be found here:
      * https://hatching.io/blog/tt-2020-10-23/ and https://tria.ge/s/
      *
@@ -732,15 +920,17 @@ public class TriageApi {
     /**
      * Searches for the given query in the given cloud (either public or
      * private) and returns a SearchResult object. This object contains a list
-     * of all results and the search offset field. The offset field can be used
-     * to obtain more search results for the same query, beyond the given limit.
-     * The offset value is defined in the second argument. By default, the
-     * Triage API will return a maximum of 50 results. Several of the function
-     * overloads accept a maximum value as an argument.
-     *
+     * of all results and the search offset field.<br>
+     * <br>
+     * The offset field can be used to obtain more search results for the same
+     * query, beyond the given limit. The offset value is defined in the second
+     * argument. By default, the Triage API will return a maximum of 50 results.
+     * Several of the function overloads accept a maximum value as an
+     * argument.<br>
+     * <br>
      * Note that the offset should be UTC based, as Triage works based on the
-     * UTC time zone.
-     *
+     * UTC time zone.<br>
+     * <br>
      * More information about queries on Triage can be found here:
      * https://hatching.io/blog/tt-2020-10-23/ and https://tria.ge/s/
      *
@@ -758,16 +948,17 @@ public class TriageApi {
     /**
      * Searches for the given query in the given cloud (either public or
      * private) and returns a SearchResult object. This object contains a list
-     * of all results and the search offset field. The offset field can be used
-     * to obtain more search results for the same query, beyond the given limit.
-     * The offset value is defined in the second argument. The maximum amount of
-     * results is given as the third argument in this function. The maximum
-     * amount for the limit is 200. Any value higher than that will result in
-     * the usage of 200 as the limit.
-     *
+     * of all results and the search offset field.<br>
+     * <br>
+     * The offset field can be used to obtain more search results for the same
+     * query, beyond the given limit. The offset value is defined in the second
+     * argument. The maximum amount of results is given as the third argument in
+     * this function. The maximum amount for the limit is 200. Any value higher
+     * than that will result in the usage of 200 as the limit.<br>
+     * <br>
      * Note that the offset should be UTC based, as Triage works based on the
-     * UTC time zone.
-     *
+     * UTC time zone.<br>
+     * <br>
      * More information about queries on Triage can be found here:
      * https://hatching.io/blog/tt-2020-10-23/ and https://tria.ge/s/
      *
@@ -793,21 +984,22 @@ public class TriageApi {
      * Searches for the given query in the given cloud (either public or
      * private) and returns a list of SearchResultEntry objects. This list
      * contains all samples that match the given query, and were completed on
-     * Triage within the given date ranges.
-     *
+     * Triage within the given date ranges.<br>
+     * <br>
      * The upper limit of 200 samples per search query is still maintained
      * within this function, as multiple function calls are used to iterate
-     * through the sample set of Triage between the two given moments in time.
-     *
+     * through the sample set of Triage between the two given moments in
+     * time.<br>
+     * <br>
      * Note that both the earliest and latest variables should be based upon
      * this system's time zone, as they are converted into UTC within this API.
      * The conversion to UTC is mandatory, as Triage solemnly works with the UTC
-     * time zone.
-     *
+     * time zone.<br>
+     * <br>
      * Note that the bigger the timespan between the two moments is, the longer
      * this function takes to execute. As such, one should use this with
-     * caution!
-     *
+     * caution!<br>
+     * <br>
      * More information about queries on Triage can be found here:
      * https://hatching.io/blog/tt-2020-10-23/ and https://tria.ge/s/
      *
@@ -871,21 +1063,22 @@ public class TriageApi {
      * private) and returns a list of SearchResultEntry objects. This list
      * contains all samples that match the given query, and were completed on
      * Triage between the earliest given moment and the moment this function was
-     * called.
-     *
+     * called.<br>
+     * <br>
      * The upper limit of 200 samples per search query is still maintained
      * within this function, as multiple function calls are used to iterate
-     * through the sample set of Triage between the two given moments in time.
-     *
+     * through the sample set of Triage between the two given moments in
+     * time.<br>
+     * <br>
      * Note that both the earliest and latest variables should be based upon
      * this system's time zone, as they are converted into UTC within this API.
      * The conversion to UTC is mandatory, as Triage solemnly works with the UTC
-     * time zone.
-     *
+     * time zone.<br>
+     * <br>
      * Note that the bigger the timespan between the two moments is, the longer
      * this function takes to execute. As such, one should use this with
-     * caution!
-     *
+     * caution!<br>
+     * <br>
      * More information about queries on Triage can be found here:
      * https://hatching.io/blog/tt-2020-10-23/ and https://tria.ge/s/
      *
@@ -903,8 +1096,8 @@ public class TriageApi {
 
     /**
      * Gets all associated families that were detected in the sandbox based on
-     * the given signatures.
-     *
+     * the given signatures.<br>
+     * <br>
      * The allowCaching boolean defines if the list of all families, which is
      * kept as a global object in this class, can remain cached, or if it needs
      * to be recreated when this function is called. The first time any function
@@ -927,6 +1120,23 @@ public class TriageApi {
         return getFamilies(toMatch, allowCaching);
     }
 
+    /**
+     * Gets all associated families that were detected in the sandbox based on
+     * the given signatures.<br>
+     * <br>
+     * The allowCaching boolean defines if the list of all families, which is
+     * kept as a global object in this class, can remain cached, or if it needs
+     * to be recreated when this function is called.The first time any function
+     * is called that uses this list, it is instantiated, regardless of the
+     * boolean's value.
+     *
+     * @param toMatch the list of strings to match, which can be manually
+     * created or taken from Triage reports
+     * @param allowCaching if the global family list may be cached, or not
+     * @return a list of families that were detected for the given signatures.
+     * This list can be empty if no matches have been found.
+     * @throws IOException if the HTTP request fails
+     */
     public Set<String> getFamilies(List<String> toMatch, boolean allowCaching) throws IOException {
         Set<String> families = new HashSet<>();
 
@@ -956,8 +1166,8 @@ public class TriageApi {
 
     /**
      * Gets all associated families that were detected in the sandbox based on
-     * the given report.
-     *
+     * the given report.<br>
+     * <br>
      * The allowCaching boolean defines if the list of all families, which is
      * kept as a global object in this class, can remain cached, or if it needs
      * to be recreated when this function is called. The first time any function
@@ -996,8 +1206,8 @@ public class TriageApi {
 
     /**
      * Gets all associated families that were detected in the sandbox based on
-     * the given reports.
-     *
+     * the given reports.<br>
+     * <br>
      * The allowCaching boolean defines if the list of all families, which is
      * kept as a global object in this class, can remain cached, or if it needs
      * to be recreated when this function is called. The first time any function
@@ -1024,8 +1234,8 @@ public class TriageApi {
 
     /**
      * Gets all associated families that were detected in the sandbox based on
-     * the given sample and task ID.
-     *
+     * the given sample and task ID.<br>
+     * <br>
      * The allowCaching boolean defines if the list of all families, which is
      * kept as a global object in this class, can remain cached, or if it needs
      * to be recreated when this function is called. The first time any function
@@ -1064,8 +1274,8 @@ public class TriageApi {
      *
      * @param report the report to download all dumped sections from
      * @return a mapping where the key is the dumped section's name (as present
-     * in Dump.getName()), and the value is the raw section in a boxed byte
-     * array
+     * in <code>Dump.getName()</code>), and the value is the raw section in a
+     * boxed byte array
      * @throws IOException if the HTTP request fails
      */
     public Map<String, Byte[]> getDumpedSections(TriageReport report) throws IOException {
@@ -1091,7 +1301,7 @@ public class TriageApi {
      * mapping, per report, in a key-value mapping. In other words: a mapping
      * that has reports as keys, with a mapping of all section names and the
      * corresponding sections as a boxed byte array.
-     * @throws IOException if the HTTP request fails
+     * @throws IOException if any of the HTTP requests fail
      */
     public Map<TriageReport, Map<String, Byte[]>> getDumpedSections(List<TriageReport> reports) throws IOException {
         Map<TriageReport, Map<String, Byte[]>> mapping = new HashMap<>();

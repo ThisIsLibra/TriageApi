@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Max 'Libra' Kersten [@LibraAnalysis, https://maxkersten.nl]
+ * Copyright (C) 2020 Max 'Libra' Kersten [@Libranalysis, https://maxkersten.nl]
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@ import triageapi.model.SearchResult;
 import triageapi.model.StaticReport;
 import triageapi.model.TriageReport;
 import org.json.JSONArray;
+import triageapi.model.SampleEvents;
 
 /**
  * This class serves as a wrapper class for the more specific parsers. As such,
@@ -33,7 +34,7 @@ import org.json.JSONArray;
  * remains clean. Especially when using the GenericParser for functions that are
  * used in multiple parsers.
  *
- * @author Max 'Libra' Kersten [@LibraAnalysis, https://maxkersten.nl]
+ * @author Max 'Libra' Kersten [@Libranalysis, https://maxkersten.nl]
  */
 public class JsonParser {
 
@@ -62,7 +63,15 @@ public class JsonParser {
      */
     private ListParser listParser;
 
+    /**
+     * The parser to convert JSON data into search result objects
+     */
     private SearchResultParser searchResultParser;
+
+    /**
+     * The parser to convert JSOn data into sample event objects
+     */
+    private SampleEventParser sampleEventParser;
 
     /**
      * Creates an instance of this parser, which instantiates all required
@@ -75,6 +84,21 @@ public class JsonParser {
         fileUploadResultParser = new FileUploadResultParser();
         listParser = new ListParser();
         searchResultParser = new SearchResultParser();
+        sampleEventParser = new SampleEventParser();
+    }
+
+    /**
+     * Converts the given JSON value in string form into an object. Missing
+     * values are set to empty values (or false for booleans) but never null. As
+     * such, every field in the returned field can be accessed safely. Each
+     * object contains a boolean that is called <code>isEmpty</em>, which is set
+     * to true if an object is completely empty.
+     *
+     * @param json the sample events data in JSON
+     * @return the Java object to work with the sample events
+     */
+    public SampleEvents parseSampleEvents(String json) {
+        return sampleEventParser.parse(json);
     }
 
     /**

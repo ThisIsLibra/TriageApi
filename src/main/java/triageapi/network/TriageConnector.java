@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Max 'Libra' Kersten [@LibraAnalysis, https://maxkersten.nl]
+ * Copyright (C) 2020 Max 'Libra' Kersten [@Libranalysis, https://maxkersten.nl]
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -32,7 +32,7 @@ import org.apache.http.impl.client.HttpClients;
  * the object, the Triage API key is required. This key is then used in all
  * following requests that are made with that specific instance.
  *
- * @author Max 'Libra' Kersten [@LibraAnalysis, https://maxkersten.nl]
+ * @author Max 'Libra' Kersten [@Libranalysis, https://maxkersten.nl]
  */
 public class TriageConnector {
 
@@ -53,6 +53,22 @@ public class TriageConnector {
     }
 
     /**
+     * Checks if the status code is below 100 (which is not an offical status
+     * code) or 400 or higher. The 400 range of status codes refers to client
+     * errors, whereas the 500 range refers to server errors.
+     *
+     * @param url the URL which was requested
+     * @param statusCode the server's status code in the given response
+     * @throws IOException if the status code is lower than 100, or above (or
+     * equal to) 400
+     */
+    private void checkStatusCode(String url, int statusCode) throws IOException {
+        if (statusCode < 100 || statusCode >= 400) {
+            throw new IOException("Status code error: the response of \"" + url + "\" returned " + statusCode);
+        }
+    }
+
+    /**
      * Performs a generic HTTP GET request to the given URL. The response is
      * returned as a byte array, which can be converted into several data types,
      * depending on the expected outcome.
@@ -69,9 +85,12 @@ public class TriageConnector {
         //Create a HTTP client
         CloseableHttpClient httpClient = HttpClients.createDefault();
         //Execute the request
-        CloseableHttpResponse responseObject = httpClient.execute(request);
+        CloseableHttpResponse response = httpClient.execute(request);
         //Get the response
-        HttpEntity responseEntity = responseObject.getEntity();
+        HttpEntity responseEntity = response.getEntity();
+
+        //Check if the status code indicates an error
+        checkStatusCode(url, response.getStatusLine().getStatusCode());
 
         //Read the response, although the size is unknown, its read in chunks of 1024 bytes
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
@@ -113,6 +132,9 @@ public class TriageConnector {
         //Get the response
         HttpEntity responseEntity = response.getEntity();
 
+        //Check if the status code indicates an error
+        checkStatusCode(url, response.getStatusLine().getStatusCode());
+
         //Read the response in chunks of 1024 bytes
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
         int offset;
@@ -152,6 +174,9 @@ public class TriageConnector {
         CloseableHttpResponse response = httpClient.execute(httpPost);
         //Get the response
         HttpEntity responseEntity = response.getEntity();
+
+        //Check if the status code indicates an error
+        checkStatusCode(url, response.getStatusLine().getStatusCode());
 
         //Read the response in chunks of 1024 bytes
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();

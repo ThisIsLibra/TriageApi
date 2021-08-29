@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Max 'Libra' Kersten [@LibraAnalysis, https://maxkersten.nl]
+ * Copyright (C) 2021 Max 'Libra' Kersten [@Libranalysis, https://maxkersten.nl]
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@ import java.util.Set;
 
 /**
  *
- * @author Max 'Libra' Kersten [@LibraAnalysis, https://maxkersten.nl]
+ * @author Max 'Libra' Kersten [@Libranalysis, https://maxkersten.nl]
  */
 public class StaticSignature {
 

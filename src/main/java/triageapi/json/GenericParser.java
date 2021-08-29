@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Max 'Libra' Kersten [@LibraAnalysis, https://maxkersten.nl]
+ * Copyright (C) 2020 Max 'Libra' Kersten [@Libranalysis, https://maxkersten.nl]
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@ import org.json.JSONArray;
 /**
  * This abstract class contains functions that are used by other parsers
  *
- * @author Max 'Libra' Kersten [@LibraAnalysis, https://maxkersten.nl]
+ * @author Max 'Libra' Kersten [@Libranalysis, https://maxkersten.nl]
  */
 public abstract class GenericParser {
 

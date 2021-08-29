@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Max 'Libra' Kersten [@LibraAnalysis, https://maxkersten.nl]
+ * Copyright (C) 2021 Max 'Libra' Kersten [@Libranalysis, https://maxkersten.nl]
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,35 +14,34 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package model;
+package triageapi.model;
 
 /**
  *
- * @author Max 'Libra' Kersten [@LibraAnalysis, https://maxkersten.nl]
+ * @author Max 'Libra' Kersten [@Libranalysis, https://maxkersten.nl]
  */
-public class Task {
+public class Event {
 
     private String id;
     private String status;
     private String target;
+    private String pick;
     private boolean empty;
 
-    public Task() {
+    public Event() {
+        this.id = "";
+        this.status = "";
+        this.target = "";
+        this.pick = "";
         empty = true;
-        id = "";
-        status = "";
-        target = "";
     }
 
-    public Task(String id, String status, String target) {
-        empty = false;
+    public Event(String id, String status, String target, String pick) {
         this.id = id;
         this.status = status;
         this.target = target;
-    }
-
-    public boolean isEmpty() {
-        return empty;
+        this.pick = pick;
+        empty = false;
     }
 
     public String getId() {
@@ -69,4 +68,15 @@ public class Task {
         this.target = target;
     }
 
+    public String getPick() {
+        return pick;
+    }
+
+    public void setPick(String pick) {
+        this.pick = pick;
+    }
+
+    public boolean isEmpty() {
+        return empty;
+    }
 }

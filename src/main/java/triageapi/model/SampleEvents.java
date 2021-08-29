@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Max 'Libra' Kersten [@LibraAnalysis, https://maxkersten.nl]
+ * Copyright (C) 2021 Max 'Libra' Kersten [@Libranalysis, https://maxkersten.nl]
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,44 +14,46 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package model;
+package triageapi.model;
 
 /**
  *
- * @author Max 'Libra' Kersten [@LibraAnalysis, https://maxkersten.nl]
+ * @author Max 'Libra' Kersten [@Libranalysis, https://maxkersten.nl]
  */
-public class FileUploadResult {
+public class SampleEvents {
 
     private String id;
     private String status;
     private String kind;
     private String fileName;
     private boolean isPrivate;
+    private Event[] sampleEvents;
     private String submitted;
+    private String completed;
     private boolean empty;
 
-    public FileUploadResult() {
+    public SampleEvents() {
+        this.id = "";
+        this.status = "";
+        this.kind = "";
+        this.fileName = "";
+        this.isPrivate = false;
+        this.sampleEvents = new Event[0];
+        this.submitted = "";
+        this.completed = "";
         empty = true;
-        id = "";
-        status = "";
-        kind = "";
-        fileName = "";
-        isPrivate = false;
-        submitted = "";
     }
 
-    public FileUploadResult(String id, String status, String kind, String fileName, boolean isPrivate, String submitted) {
-        empty = false;
+    public SampleEvents(String id, String status, String kind, String fileName, boolean isPrivate, Event[] sampleEvents, String submitted, String completed) {
         this.id = id;
         this.status = status;
         this.kind = kind;
         this.fileName = fileName;
         this.isPrivate = isPrivate;
+        this.sampleEvents = sampleEvents;
         this.submitted = submitted;
-    }
-
-    public boolean isEmpty() {
-        return empty;
+        this.completed = completed;
+        empty = false;
     }
 
     public String getId() {
@@ -86,12 +88,20 @@ public class FileUploadResult {
         this.fileName = fileName;
     }
 
-    public boolean isIsPrivate() {
+    public boolean isPrivate() {
         return isPrivate;
     }
 
-    public void setIsPrivate(boolean isPrivate) {
-        this.isPrivate = isPrivate;
+    public void setPrivate(boolean aPrivate) {
+        isPrivate = aPrivate;
+    }
+
+    public Event[] getSampleEvents() {
+        return sampleEvents;
+    }
+
+    public void setSampleEvents(Event[] sampleEvents) {
+        this.sampleEvents = sampleEvents;
     }
 
     public String getSubmitted() {
@@ -102,4 +112,15 @@ public class FileUploadResult {
         this.submitted = submitted;
     }
 
+    public String getCompleted() {
+        return completed;
+    }
+
+    public void setCompleted(String completed) {
+        this.completed = completed;
+    }
+
+    public boolean isEmpty() {
+        return empty;
+    }
 }
