@@ -53,7 +53,7 @@ public class TriageConnector {
     }
 
     /**
-     * Checks if the status code is below 100 (which is not an offical status
+     * Checks if the status code is below 100 (which is not an official status
      * code) or 400 or higher. The 400 range of status codes refers to client
      * errors, whereas the 500 range refers to server errors.
      *

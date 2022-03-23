@@ -24,6 +24,7 @@ import triageapi.model.StaticReport;
 import triageapi.model.TriageReport;
 import org.json.JSONArray;
 import triageapi.model.SampleEvents;
+import triageapi.model.TriageOverview;
 
 /**
  * This class serves as a wrapper class for the more specific parsers. As such,
@@ -69,9 +70,14 @@ public class JsonParser {
     private SearchResultParser searchResultParser;
 
     /**
-     * The parser to convert JSOn data into sample event objects
+     * The parser to convert JSON data into sample event objects
      */
     private SampleEventParser sampleEventParser;
+
+    /**
+     * The parser to convert JSON data into a triage overview objects
+     */
+    private TriageOverviewParser triageOverviewParser;
 
     /**
      * Creates an instance of this parser, which instantiates all required
@@ -85,6 +91,7 @@ public class JsonParser {
         listParser = new ListParser();
         searchResultParser = new SearchResultParser();
         sampleEventParser = new SampleEventParser();
+        triageOverviewParser = new TriageOverviewParser();
     }
 
     /**
@@ -190,5 +197,15 @@ public class JsonParser {
      */
     public SearchResult parseSearchResult(String json) {
         return searchResultParser.parse(json);
+    }
+
+    /**
+     * Parses a JSON string into a TriageOverview object
+     *
+     * @param json the JSON string
+     * @return the TriageOverview object
+     */
+    public TriageOverview parseTriageOverview(String json) {
+        return triageOverviewParser.parse(json);
     }
 }

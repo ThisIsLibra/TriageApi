@@ -27,6 +27,7 @@ public class Ransom {
     private String[] emails;
     private String[] wallets;
     private String[] urls;
+    private String[] contact;
     private String note;
     private boolean empty;
 
@@ -37,16 +38,18 @@ public class Ransom {
         emails = new String[0];
         wallets = new String[0];
         urls = new String[0];
+        contact = new String[0];
         note = "";
     }
 
-    public Ransom(String family, String target, String[] emails, String[] wallets, String[] urls, String note) {
+    public Ransom(String family, String target, String[] emails, String[] wallets, String[] urls, String[] contact, String note) {
         empty = false;
         this.family = family;
         this.target = target;
         this.emails = emails;
         this.wallets = wallets;
         this.urls = urls;
+        this.contact = contact;
         this.note = note;
     }
 
@@ -92,6 +95,14 @@ public class Ransom {
 
     public void setUrls(String[] urls) {
         this.urls = urls;
+    }
+    
+    public String[] getContact() {
+        return contact;
+    }
+
+    public void setContact(String[] contact) {
+        this.contact = contact;
     }
 
     public String getNote() {

@@ -26,6 +26,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -49,6 +50,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import triageapi.model.SampleEvents;
 import triageapi.model.StaticSignature;
+import triageapi.model.TriageOverview;
 
 /**
  * This class serves as the single point entry for the Triage API. Using the
@@ -324,6 +326,20 @@ public class TriageApi {
     }
 
     /**
+     * Downloads the raw malware sample from Triage, based on the given sample
+     * ID
+     *
+     * @param overview the TriageOverview of the sample that should be
+     * downloaded
+     * @return a native byte array that contains the raw sample
+     * @throws IOException if the HTTP request fails, or if an internal server
+     * error occurs
+     */
+    public byte[] downloadSample(TriageOverview overview) throws IOException {
+        return downloadSample(overview.getSample().getId());
+    }
+
+    /**
      * Download samples in bulk, based on the given sample IDs. One or more
      * samples might be missing from the returned mapping if exceptions are
      * suppressed. All samples that were downloaded correctly will be
@@ -448,6 +464,35 @@ public class TriageApi {
             sampleIds.add(targetDesc.getId());
         }
         return downloadSamples(sampleIds, suppressExceptions);
+    }
+
+    /**
+     * Download samples in bulk, based on the given overviews. One or more
+     * samples might be missing from the returned mapping if the exceptions are
+     * suppressed. All samples that were downloaded correctly will be
+     * returned.<br>
+     * <br>
+     * If exceptions are not suppressed, all correctly downloaded samples are
+     * discarded once an exception is thrown.
+     *
+     * @param overviews the overviews of the samples to download
+     * @param suppressExceptions true to ignore exceptions, false to throw any
+     * encountered exception to the caller of this function
+     * @return a mapping with sample IDs as a key, and the sample as a boxed
+     * byte array
+     * @throws IOException if the HTTP request fails, if the given array of
+     * reports is null or empty, or if an internal server error occurs
+     */
+    public Map<String, Byte[]> downloadSamples(TriageOverview[] overviews, boolean suppressExceptions) throws IOException {
+        if (overviews == null || overviews.length < 1) {
+            throw new IOException("The given array of reports is null or empty!");
+        }
+        List<String> sampleIds = new ArrayList<>();
+        for (TriageOverview overview : overviews) {
+            sampleIds.add(overview.getSample().getId());
+        }
+        return downloadSamples(sampleIds, suppressExceptions);
+
     }
 
     /**
@@ -1255,6 +1300,30 @@ public class TriageApi {
     }
 
     /**
+     * Gets all associated families that were detected in the sandbox based on
+     * the given array of overviews.<br>
+     * <br>
+     * Note that unlike the other <code>getFamilies</code> overloads, this
+     * function does not need to make additional calls to the Triage backend, as
+     * the families per overview are already embedded within the object. This
+     * method is purely added for convenience, as other common objects in the
+     * client can be used in the same manner.
+     *
+     * @param overviews the array of overview objects to fetch all families from
+     * @return a list of families that were detected for the given sample. This
+     * list can be empty if no matches have been found.
+     */
+    public Set<String> getFamilies(TriageOverview[] overviews) {
+        Set<String> families = new HashSet<>();
+
+        for (TriageOverview overview : overviews) {
+            families.addAll(Arrays.asList(overview.getAnalysis().getFamilies()));
+        }
+
+        return families;
+    }
+
+    /**
      * Gets a dumped section, based on a given sample ID, task ID, and the name
      * of the dumped file
      *
@@ -1312,5 +1381,20 @@ public class TriageApi {
         }
 
         return mapping;
+    }
+
+    /**
+     * Fetches all details from the given submission (regardless of the used
+     * profile during the execution) in a single object
+     *
+     * @param sampleId the sample ID of the submission
+     * @return a TriageOverview object, which contains all details of the
+     * submitted sample, regardless of the used profile during the execution
+     * @throws IOException if the HTTP request fails
+     */
+    public TriageOverview getTriageOverview(String sampleId) throws IOException {
+        String json = new String(connector.get(getUrl("samples/" + sampleId + "/overview.json")));
+        TriageOverview triageOverview = parser.parseTriageOverview(json);
+        return triageOverview;
     }
 }

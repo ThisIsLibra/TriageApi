@@ -16,6 +16,9 @@
  */
 package triageapi.model;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  *
  * @author Max 'Libra' Kersten [@Libranalysis, https://maxkersten.nl]
@@ -36,11 +39,12 @@ public class Config {
     private String[] webInject;
     private String[] commandLines;
     private String listenAddr;
-    private String listenPort;
+    private int listenPort;
     private String[] listenFor;
     private byte[][] shellcode;
     private String[] extractedPe;
-    private Object attributes;
+    private Credentials[] credentials;
+    private Map<String, String> attributes;
 
     private boolean empty;
 
@@ -60,13 +64,15 @@ public class Config {
         webInject = new String[0];
         commandLines = new String[0];
         listenAddr = "";
-        listenPort = "";
+        listenPort = -1;
         listenFor = new String[0];
         shellcode = new byte[0][0];
         extractedPe = new String[0];
+        credentials = new Credentials[0];
+        attributes = new HashMap<>();
     }
 
-    public Config(String family, String[] tags, String rule, String[] c2, String[] decoy, String version, String botnet, String campaign, String[] mutex, String[] dns, Key[] keys, String[] webInject, String[] commandLines, String listenAddr, String listenPort, String[] listenFor, byte[][] shellcode, String[] extractedPe, Object attributes) {
+    public Config(String family, String[] tags, String rule, String[] c2, String[] decoy, String version, String botnet, String campaign, String[] mutex, String[] dns, Key[] keys, String[] webInject, String[] commandLines, String listenAddr, int listenPort, String[] listenFor, byte[][] shellcode, String[] extractedPe, Credentials[] credentials, Map<String, String> attributes) {
         empty = false;
         this.family = family;
         this.tags = tags;
@@ -86,6 +92,7 @@ public class Config {
         this.listenFor = listenFor;
         this.shellcode = shellcode;
         this.extractedPe = extractedPe;
+        this.credentials = credentials;
         this.attributes = attributes;
     }
 
@@ -205,11 +212,11 @@ public class Config {
         this.listenAddr = listenAddr;
     }
 
-    public String getListenPort() {
+    public int getListenPort() {
         return listenPort;
     }
 
-    public void setListenPort(String listenPort) {
+    public void setListenPort(int listenPort) {
         this.listenPort = listenPort;
     }
 
@@ -237,11 +244,19 @@ public class Config {
         this.extractedPe = extractedPe;
     }
 
-    public Object getAttributes() {
+    public Credentials[] getCredentials() {
+        return credentials;
+    }
+
+    public void setCredentials(Credentials[] credentials) {
+        this.credentials = credentials;
+    }
+
+    public Map<String, String> getAttributes() {
         return attributes;
     }
 
-    public void setAttributes(Object attributes) {
+    public void setAttributes(Map<String, String> attributes) {
         this.attributes = attributes;
     }
 

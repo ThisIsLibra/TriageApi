@@ -21,9 +21,11 @@ package triageapi.model;
  * @author Max 'Libra' Kersten [@Libranalysis, https://maxkersten.nl]
  */
 public class Dropper {
+
     private String family;
     private String language;
     private String source;
+    private String deobfuscated;
     private DropperURL[] urls;
     private boolean empty;
 
@@ -32,14 +34,16 @@ public class Dropper {
         family = "";
         language = "";
         source = "";
+        deobfuscated = "";
         urls = new DropperURL[0];
     }
 
-    public Dropper(String family, String language, String source, DropperURL[] urls) {
+    public Dropper(String family, String language, String source, String deobfuscated, DropperURL[] urls) {
         empty = false;
         this.family = family;
         this.language = language;
         this.source = source;
+        this.deobfuscated = deobfuscated;
         this.urls = urls;
     }
 
@@ -71,6 +75,14 @@ public class Dropper {
         this.source = source;
     }
 
+    public String getDeobfuscated() {
+        return deobfuscated;
+    }
+
+    public void setDeobfuscated(String deobfuscated) {
+        this.deobfuscated = deobfuscated;
+    }
+
     public DropperURL[] getUrls() {
         return urls;
     }
@@ -78,5 +90,4 @@ public class Dropper {
     public void setUrls(DropperURL[] urls) {
         this.urls = urls;
     }
-
 }

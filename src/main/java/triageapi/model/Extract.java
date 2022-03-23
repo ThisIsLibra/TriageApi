@@ -28,6 +28,7 @@ public class Extract {
     private String path;
     private Ransom ransomNote;
     private Dropper dropper;
+    private Credentials credentials;
     private boolean empty;
 
     public Extract() {
@@ -38,9 +39,10 @@ public class Extract {
         path = "";
         ransomNote = new Ransom();
         dropper = new Dropper();
+        credentials = new Credentials();
     }
 
-    public Extract(String dumpedFile, String resource, Config config, String path, Ransom ransomNote, Dropper dropper) {
+    public Extract(String dumpedFile, String resource, Config config, String path, Ransom ransomNote, Dropper dropper, Credentials credentials) {
         empty = false;
         this.dumpedFile = dumpedFile;
         this.resource = resource;
@@ -48,6 +50,7 @@ public class Extract {
         this.path = path;
         this.ransomNote = ransomNote;
         this.dropper = dropper;
+        this.credentials = credentials;
     }
 
     public boolean isEmpty() {
@@ -102,4 +105,11 @@ public class Extract {
         this.dropper = dropper;
     }
 
+    public Credentials getCredentials() {
+        return credentials;
+    }
+
+    public void setCredentials(Credentials credentials) {
+        this.credentials = credentials;
+    }
 }

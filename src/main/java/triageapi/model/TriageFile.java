@@ -28,13 +28,16 @@ public class TriageFile {
     private String sha1;
     private String sha256;
     private String sha512;
+    private String ssdeep;
     private String[] extensions;
     private String[] tags;
     private int depth;
     private String kind;
     private boolean selected;
     private String runAs;
-private boolean empty;
+    private TriageFileMetaData metaData;
+    private String password;
+    private boolean empty;
 
     public TriageFile() {
         empty = true;
@@ -44,15 +47,18 @@ private boolean empty;
         sha1 = "";
         sha256 = "";
         sha512 = "";
+        ssdeep = "";
         extensions = new String[0];
         tags = new String[0];
         depth = 0;
         kind = "";
         selected = false;
         runAs = "";
+        metaData = new TriageFileMetaData();
+        password = "";
     }
 
-    public TriageFile(String fileName, int fileSize, String md5, String sha1, String sha256, String sha512, String[] extensions, String[] tags, int depth, String kind, boolean selected, String runAs) {
+    public TriageFile(String fileName, int fileSize, String md5, String sha1, String sha256, String sha512, String ssdeep, String[] extensions, String[] tags, int depth, String kind, boolean selected, String runAs, TriageFileMetaData metaData, String password) {
         empty = false;
         this.fileName = fileName;
         this.fileSize = fileSize;
@@ -60,12 +66,15 @@ private boolean empty;
         this.sha1 = sha1;
         this.sha256 = sha256;
         this.sha512 = sha512;
+        this.ssdeep = ssdeep;
         this.extensions = extensions;
         this.tags = tags;
         this.depth = depth;
         this.kind = kind;
         this.selected = selected;
         this.runAs = runAs;
+        this.metaData = metaData;
+        this.password = password;
     }
 
     public String getFileName() {
@@ -116,6 +125,14 @@ private boolean empty;
         this.sha512 = sha512;
     }
 
+    public String getSsdeep() {
+        return ssdeep;
+    }
+
+    public void setSsdeep(String ssdeep) {
+        this.ssdeep = ssdeep;
+    }
+
     public String[] getExtensions() {
         return extensions;
     }
@@ -164,4 +181,19 @@ private boolean empty;
         this.runAs = runAs;
     }
 
+    public TriageFileMetaData getMetaData() {
+        return metaData;
+    }
+
+    public void setMetaData(TriageFileMetaData metaData) {
+        this.metaData = metaData;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
 }
