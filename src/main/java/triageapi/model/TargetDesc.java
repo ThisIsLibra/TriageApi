@@ -34,6 +34,7 @@ public class TargetDesc {
     private String sha1;
     private String sha256;
     private String sha512;
+    private String ssdeep;
     private String fileType;
     private String[] staticTags;
     private String compatFamily;
@@ -53,12 +54,13 @@ public class TargetDesc {
         sha1 = "";
         sha256 = "";
         sha512 = "";
+        ssdeep = "";
         fileType = "";
         staticTags = new String[0];
         compatFamily = "";
     }
 
-    public TargetDesc(String id, int score, String submitted, String compatCompleted, String target, String pick, String type, int size, String md5, String sha1, String sha256, String sha512, String fileType, String[] staticTags, String compatFamily) {
+    public TargetDesc(String id, int score, String submitted, String compatCompleted, String target, String pick, String type, int size, String md5, String sha1, String sha256, String sha512, String ssdeep, String fileType, String[] staticTags, String compatFamily) {
         empty = false;
         this.id = id;
         this.score = score;
@@ -72,6 +74,7 @@ public class TargetDesc {
         this.sha1 = sha1;
         this.sha256 = sha256;
         this.sha512 = sha512;
+        this.ssdeep = ssdeep;
         this.fileType = fileType;
         this.staticTags = staticTags;
         this.compatFamily = compatFamily;
@@ -175,6 +178,14 @@ public class TargetDesc {
 
     public void setSha512(String sha512) {
         this.sha512 = sha512;
+    }
+
+    public String getSsdeep() {
+        return ssdeep;
+    }
+
+    public void setSsdeep(String ssdeep) {
+        this.ssdeep = ssdeep;
     }
 
     public String getFileType() {

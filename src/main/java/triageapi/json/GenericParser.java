@@ -268,12 +268,13 @@ public abstract class GenericParser {
         String sha1 = json.optString("sha1");
         String sha256 = json.optString("sha256");
         String sha512 = json.optString("sha512");
+        String ssdeep = json.optString("ssdeep");
         String fileType = json.optString("filetype");
         //static_tags
         String[] staticTags = optStringArray(json.optJSONArray("static_tags"));
         String compatFamily = json.optString("family");
 
-        return new TargetDesc(id, score, submitted, compatCompleted, target, pick, type, size, md5, sha1, sha256, sha512, fileType, staticTags, compatFamily);
+        return new TargetDesc(id, score, submitted, compatCompleted, target, pick, type, size, md5, sha1, sha256, sha512, ssdeep, fileType, staticTags, compatFamily);
     }
 
     protected ReportTaskFailure getReportTaskFailure(JSONObject json) {
@@ -432,6 +433,7 @@ public abstract class GenericParser {
     }
 
     protected Map<String, String> optMapStringString(JSONObject json) {
+        //TODO optmap string string
         Map<String, String> mapping = new HashMap<>();
         if (json == null) {
             return mapping;

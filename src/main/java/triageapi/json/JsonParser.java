@@ -98,7 +98,7 @@ public class JsonParser {
      * Converts the given JSON value in string form into an object. Missing
      * values are set to empty values (or false for booleans) but never null. As
      * such, every field in the returned field can be accessed safely. Each
-     * object contains a boolean that is called <code>isEmpty</em>, which is set
+     * object contains a boolean that is called <code>isEmpty</code>, which is set
      * to true if an object is completely empty.
      *
      * @param json the sample events data in JSON
@@ -112,7 +112,7 @@ public class JsonParser {
      * Converts the given JSON value in string form into an object. Missing
      * values are set to empty values (or false for booleans) but never null. As
      * such, every field in the returned field can be accessed safely. Each
-     * object contains a boolean that is called <code>isEmpty</em>, which is set
+     * object contains a boolean that is called <code>isEmpty</code>, which is set
      * to true if an object is completely empty.
      *
      * @param json the JSON value to parse
@@ -126,7 +126,7 @@ public class JsonParser {
      * Converts the given JSON value in string form into an object. Missing
      * values are set to empty values (or false for booleans) but never null. As
      * such, every field in the returned field can be accessed safely. Each
-     * object contains a boolean that is called <code>isEmpty</em>, which is set
+     * object contains a boolean that is called <code>isEmpty</code>, which is set
      * to true if an object is completely empty.
      *
      * @param json the JSON value to parse
@@ -141,7 +141,7 @@ public class JsonParser {
      * Converts the given JSON value in string form into an object. Missing
      * values are set to empty values (or false for booleans) but never null. As
      * such, every field in the returned field can be accessed safely. Each
-     * object contains a boolean that is called <code>isEmpty</em>, which is set
+     * object contains a boolean that is called <code>isEmpty</code>, which is set
      * to true if an object is completely empty.
      *
      * @param json the JSON value to parse
@@ -155,7 +155,7 @@ public class JsonParser {
      * Converts the given JSON value in string form into an object. Missing
      * values are set to empty values (or false for booleans) but never null. As
      * such, every field in the returned field can be accessed safely. Each
-     * object contains a boolean that is called <code>isEmpty</em>, which is set
+     * object contains a boolean that is called <code>isEmpty</code>, which is set
      * to true if an object is completely empty.
      *
      * @param json the JSON value to parse
@@ -169,7 +169,7 @@ public class JsonParser {
      * Converts the given JSON value in string form into an object. Missing
      * values are set to empty values (or false for booleans) but never null. As
      * such, every field in the returned field can be accessed safely. Each
-     * object contains a boolean that is called <code>isEmpty</em>, which is set
+     * object contains a boolean that is called <code>isEmpty</code>, which is set
      * to true if an object is completely empty.
      *
      * @param json the JSON value to parse

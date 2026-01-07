@@ -23,6 +23,7 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -50,6 +51,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import triageapi.model.SampleEvents;
 import triageapi.model.StaticSignature;
+import triageapi.model.TriageEnvironment;
 import triageapi.model.TriageOverview;
 
 /**
@@ -113,15 +115,23 @@ public class TriageApi {
      * public account, as is specified by the boolean.
      *
      * @param key the API key to use when connecting with Triage's service
-     * @param privateCloud true if the account is used for Triage's private
-     * cloud, false if it is using the public cloud
+     * @param environment the environment to use, any of the enum values in the
+     * <code>TriageEnvironment</code> enum.
      */
-    public TriageApi(String key, boolean privateCloud) {
+    public TriageApi(String key, TriageEnvironment environment) {
         //Sets the base of URL, which differs between the public and private cloud
-        if (privateCloud) {
-            this.apiBase = "https://private.tria.ge/api/v0/";
-        } else {
-            this.apiBase = "https://api.tria.ge/v0/";
+        switch (environment) {
+            case PUBLIC:
+                this.apiBase = "https://api.tria.ge/v0/";
+                break;
+            case PRIVATE:
+                this.apiBase = "https://private.tria.ge/api/v0/";
+                break;
+            case RECORDED_FUTURE:
+                this.apiBase = "https://sandbox.recordedfuture.com/api/v0/";
+                break;
+            default:
+                this.apiBase = "https://api.tria.ge/v0/";
         }
 
         //The connector needs the API key, as it is needed in a header in each request
@@ -1066,8 +1076,8 @@ public class TriageApi {
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm'Z'");
 
-        LocalDateTime now = LocalDateTime.now(ZoneId.systemDefault());
-        now = setToUtc(now);
+        LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
+
         if (earliest.isAfter(now)) {
             throw new IOException("The earliest date is later than the current system time");
         }
@@ -1079,11 +1089,14 @@ public class TriageApi {
             result = search(query, nextOffset, 200);
             nextOffset = result.getNextOffset();
 
-            if (result.isEmpty()) {
+            if (result.isEmpty() || result.getSearchResults().isEmpty()) {
                 break;
             }
 
             for (SearchResultEntry searchResult : result.getSearchResults()) {
+                if (searchResult == null || searchResult.isEmpty() || searchResult.getCompleted().isBlank()) {
+                    continue;
+                }
                 LocalDateTime sampleDate = LocalDateTime.parse(formatDateTimeString(searchResult.getCompleted()), formatter);
                 sampleDate = setToUtc(sampleDate);
                 if (sampleDate.isAfter(earliest) && sampleDate.isBefore(latest)) {

@@ -40,7 +40,7 @@ public class OverviewTarget extends TargetDesc {
     }
 
     public OverviewTarget(TargetDesc targetDesc, String[] tasks, String[] tags, String[] families, Signature[] signatures, OverviewIOCs overviewIOCs) {
-        super(targetDesc.getId(), targetDesc.getScore(), targetDesc.getSubmitted(), targetDesc.getCompatCompleted(), targetDesc.getTarget(), targetDesc.getPick(), targetDesc.getType(), targetDesc.getSize(), targetDesc.getMd5(), targetDesc.getSha1(), targetDesc.getSha256(), targetDesc.getSha512(), targetDesc.getFileType(), targetDesc.getStaticTags(), targetDesc.getCompatFamily());
+        super(targetDesc.getId(), targetDesc.getScore(), targetDesc.getSubmitted(), targetDesc.getCompatCompleted(), targetDesc.getTarget(), targetDesc.getPick(), targetDesc.getType(), targetDesc.getSize(), targetDesc.getMd5(), targetDesc.getSha1(), targetDesc.getSha256(), targetDesc.getSsdeep(), targetDesc.getSha512(), targetDesc.getFileType(), targetDesc.getStaticTags(), targetDesc.getCompatFamily());
         this.tasks = tasks;
         this.tags = tags;
         this.families = families;

@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>triageapi</groupId>
     <artifactId>TriageApi</artifactId>
-    <version>1.6-stable</version>
+    <version>1.7-stable</version>
     <packaging>jar</packaging>
     
     <pluginRepositories>

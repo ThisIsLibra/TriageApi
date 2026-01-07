@@ -6,6 +6,7 @@
 package triageapi;
 
 import triageapi.model.StaticReport;
+import triageapi.model.TriageEnvironment;
 import triageapi.model.TriageOverview;
 import triageapi.model.TriageReport;
 
@@ -16,7 +17,7 @@ import triageapi.model.TriageReport;
 public class Main {
 
     public static void main(String[] args) throws Exception {
-        TriageApi api = new TriageApi("7AlA7WxmkBPdT_nA58P0YA12_NCo7slZslh-cIeIOv4:wVe7glfsHeOq185_z2UqhZwwXol5H3b_v5cvDi83SKk", false);
+        TriageApi api = new TriageApi("yeet", TriageEnvironment.PUBLIC);
         String sampleId = "220121-rhmc9ahhgr";
         //String sampleId = "220121-qbtnbahcf8";
         TriageOverview triageOverview = api.getTriageOverview(sampleId);

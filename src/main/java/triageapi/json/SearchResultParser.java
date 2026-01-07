@@ -39,15 +39,8 @@ public class SearchResultParser extends GenericParser {
     private List<SearchResultEntry> parseEntries(JSONArray jsonArray) {
         List<SearchResultEntry> results = new ArrayList<>();
 
-        if (jsonArray == null) {
-            return results;
-        }
-
         for (int i = 0; i < jsonArray.length(); i++) {
             JSONObject object = jsonArray.optJSONObject(i);
-            if (object == null) {
-                continue;
-            }
             String id = object.optString("id");
             String kind = object.optString("kind");
             String filename = object.optString("filename");
@@ -56,15 +49,16 @@ public class SearchResultParser extends GenericParser {
             String completed = object.optString("completed");
             JSONArray taskArray = object.optJSONArray("tasks");
             List<String> tasks = new ArrayList<>();
-            if (taskArray != null) {
+            if(taskArray != null) {
                 for (int taskCount = 0; taskCount < taskArray.length(); taskCount++) {
-                    JSONObject taskObject = taskArray.optJSONObject(taskCount);
-                    String task = taskObject.optString("id");
-                    if (tasks.contains(task) == false) {
-                        tasks.add(task);
-                    }
+                JSONObject taskObject = taskArray.optJSONObject(taskCount);
+                String task = taskObject.optString("id");
+                if (tasks.contains(task) == false) {
+                    tasks.add(task);
                 }
             }
+            }
+            
             results.add(new SearchResultEntry(id, tasks, kind, filename, isPrivate, submitted, completed));
         }
         return results;
