@@ -35,6 +35,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.apache.hc.client5.http.entity.mime.MultipartEntityBuilder;
 import triageapi.json.JsonParser;
 import triageapi.model.Dump;
 import triageapi.model.FileUploadResult;
@@ -46,7 +47,6 @@ import triageapi.model.StaticReport;
 import triageapi.model.TargetDesc;
 import triageapi.model.TriageReport;
 import triageapi.network.TriageConnector;
-import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import triageapi.model.SampleEvents;
@@ -116,7 +116,7 @@ public class TriageApi {
      *
      * @param key the API key to use when connecting with Triage's service
      * @param environment the environment to use, any of the enum values in the
-     * <code>TriageEnvironment</code> enum.
+     * {@link triageapi.model.TriageEnvironment} enum.
      */
     public TriageApi(String key, TriageEnvironment environment) {
         //Sets the base of URL, which differs between the public and private cloud
@@ -129,6 +129,9 @@ public class TriageApi {
                 break;
             case RECORDED_FUTURE:
                 this.apiBase = "https://sandbox.recordedfuture.com/api/v0/";
+                break;
+            case RECORDED_FUTURE_US:
+                this.apiBase = "https://us-sandbox.recordedfuture.com/api/v0";
                 break;
             default:
                 this.apiBase = "https://api.tria.ge/v0/";
@@ -176,7 +179,7 @@ public class TriageApi {
      */
     private String encode(String toEncode) {
         try {
-            return URLEncoder.encode(toEncode, StandardCharsets.UTF_8.toString());
+            return URLEncoder.encode(toEncode, StandardCharsets.UTF_8.toString()).replace(":", "%3a").replace("|", "%7C");
         } catch (UnsupportedEncodingException ex) {
             System.out.println("ERROR: unable to get the UTF-8 character set!");
             return "";
@@ -552,15 +555,37 @@ public class TriageApi {
     }
 
     /**
-     * Uploads all files in the given folder, excluding subdirectories
+     * Uploads the files at the given paths, based on the given Java file
+     * objects in the provided list
+     *
+     * @param files the files to upload and analyse on Triage
+     * @return the file upload result object
+     * @throws IOException if the HTTP request fails, or if a folder is selected
+     * instead of a file
+     */
+    public List<FileUploadResult> uploadSamples(List<File> files) throws IOException {
+        List<FileUploadResult> results = new ArrayList<>();
+        for (File file : files) {
+            if (file.isFile()) {
+                FileUploadResult newlyUploaded = uploadSample(file);
+                results.add(newlyUploaded);
+            }
+        }
+        return results;
+    }
+
+    /**
+     * Uploads all files in the given folder, and potentially its subdirectories
      *
      * @param folder the folder to upload all files from, excluding
      * subdirectories
+     * @param recursive true if the provided folder should be recursively
+     * traversed, false if not
      * @return the file upload results for all uploaded files, in a list. This
      * list can be empty if the given folder does not contain any files
      * @throws IOException if the HTTP request fails
      */
-    public List<FileUploadResult> uploadFolder(File folder) throws IOException {
+    public List<FileUploadResult> uploadFolder(File folder, boolean recursive) throws IOException {
         if (folder.isFile()) {
             throw new IOException("The given java.io.File object refers to a file, whereas it should refer to a folder!");
         }
@@ -572,8 +597,27 @@ public class TriageApi {
                 FileUploadResult result = uploadSample(file);
                 results.add(result);
             }
+
+            if (recursive) {
+                if (file.isDirectory()) {
+                    uploadFolder(file);
+                }
+            }
         }
         return results;
+    }
+
+    /**
+     * Uploads all files in the given folder, excluding subdirectories
+     *
+     * @param folder the folder to upload all files from, excluding
+     * subdirectories
+     * @return the file upload results for all uploaded files, in a list. This
+     * list can be empty if the given folder does not contain any files
+     * @throws IOException if the HTTP request fails
+     */
+    public List<FileUploadResult> uploadFolder(File folder) throws IOException {
+        return uploadFolder(folder, false);
     }
 
     /**
@@ -587,7 +631,7 @@ public class TriageApi {
      * given object refers to a file, a list with one item is returned.
      * @throws IOException if the HTTP request fails
      */
-    public List<FileUploadResult> upload(File object) throws IOException {
+    public List<FileUploadResult> uploadFile(File object) throws IOException {
         if (object.isFile()) {
             List<FileUploadResult> results = new ArrayList<>();
             FileUploadResult result = uploadSample(object);
@@ -1030,7 +1074,7 @@ public class TriageApi {
         } else if (limit > 200) {
             limit = 200;
         }
-        String url = getUrl("search?query=" + encode(query) + "&offset=" + offset + "&limit=" + limit);
+        String url = getUrl("search?query=" + encode(query) + "&offset=" + encode(offset) + "&limit=" + limit);
         String json = new String(connector.get(url));
         return parser.parseSearchResult(json);
     }

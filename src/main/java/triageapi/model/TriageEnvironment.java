@@ -29,5 +29,6 @@ package triageapi.model;
 public enum TriageEnvironment {
     PUBLIC,
     PRIVATE,
-    RECORDED_FUTURE
+    RECORDED_FUTURE,
+    RECORDED_FUTURE_US
 }

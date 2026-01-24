@@ -60,7 +60,7 @@ public class TriageOverviewParser extends GenericParser {
         OverviewSample sample = getOverviewSample(json.optJSONObject("sample"));
         TaskSummary[] tasks = optTaskSummaryArray(json.optJSONObject("tasks"));
         OverviewAnalysis analysis = getOverviewAnalysis(json.optJSONObject("analysis"));
-        OverviewTarget[] targets = optOverviewTargetArray(json.getJSONArray("targets"));
+        OverviewTarget[] targets = optOverviewTargetArray(json.optJSONArray("targets"));
         ReportTaskFailure[] errors = optReportTaskFailureArray(json.optJSONArray("errors"));
         Signature[] signatures = optSignatureArray(json.optJSONArray("signatures"));
         OverviewExtracted[] extracted = optOverviewExtractedArray(json.optJSONArray("extracted"));

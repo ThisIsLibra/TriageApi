@@ -18,14 +18,18 @@ package triageapi.network;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import org.apache.http.HttpEntity;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.entity.mime.MultipartEntityBuilder;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
+import java.util.concurrent.TimeUnit;
+import org.apache.hc.client5.http.classic.HttpClient;
+import org.apache.hc.client5.http.classic.methods.HttpGet;
+import org.apache.hc.client5.http.classic.methods.HttpPost;
+import org.apache.hc.client5.http.config.ConnectionConfig;
+import org.apache.hc.client5.http.config.RequestConfig;
+import org.apache.hc.client5.http.entity.mime.MultipartEntityBuilder;
+import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
+import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
+import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
+import org.apache.hc.core5.http.HttpEntity;
+import org.apache.hc.core5.http.io.entity.StringEntity;
 
 /**
  * This class is used to send HTTP requests to a given URL. At the creation of
@@ -83,26 +87,42 @@ public class TriageConnector {
         //Set the authorisation bearer header
         request.setHeader("Authorization", "Bearer " + key);
         //Create a HTTP client
-        CloseableHttpClient httpClient = HttpClients.createDefault();
+        RequestConfig requestConfig = RequestConfig.custom()
+                .setConnectionRequestTimeout(5, TimeUnit.MINUTES)
+                .setResponseTimeout(5, TimeUnit.MINUTES)
+                .build();
+
+        ConnectionConfig connectionConfig = ConnectionConfig.custom()
+                .setConnectTimeout(5, TimeUnit.MINUTES)
+                .build();
+
+        PoolingHttpClientConnectionManager poolingHttpClientConnectionManager = PoolingHttpClientConnectionManagerBuilder.create()
+                .setDefaultConnectionConfig(connectionConfig)
+                .build();
+
+        HttpClient httpClient = HttpClientBuilder.create()
+                .setConnectionManager(poolingHttpClientConnectionManager)
+                .setDefaultRequestConfig(requestConfig)
+                .build();
         //Execute the request
-        CloseableHttpResponse response = httpClient.execute(request);
-        //Get the response
-        HttpEntity responseEntity = response.getEntity();
+        return httpClient.execute(request, (response) -> {
+            //Get the response
+            HttpEntity responseEntity = response.getEntity();
+            //Check if the status code indicates an error
+            checkStatusCode(url, response.getCode());
 
-        //Check if the status code indicates an error
-        checkStatusCode(url, response.getStatusLine().getStatusCode());
-
-        //Read the response, although the size is unknown, its read in chunks of 1024 bytes
-        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-        int offset;
-        byte[] data = new byte[1024];
-        while ((offset = responseEntity.getContent().read(data, 0, data.length)) != -1) {
-            buffer.write(data, 0, offset);
-        }
-        //Flush the buffer
-        buffer.flush();
-        //Return the byte array
-        return buffer.toByteArray();
+            //Read the response, although the size is unknown, its read in chunks of 1024 bytes
+            ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+            int offset;
+            byte[] data = new byte[1024];
+            while ((offset = responseEntity.getContent().read(data, 0, data.length)) != -1) {
+                buffer.write(data, 0, offset);
+            }
+            //Flush the buffer
+            buffer.flush();
+            //Return the byte array
+            return buffer.toByteArray();
+        });
     }
 
     /**
@@ -118,7 +138,23 @@ public class TriageConnector {
     public byte[] post(String url, String json) throws IOException {
         StringEntity entity = new StringEntity(json);
         //Create a HTTP client
-        CloseableHttpClient httpClient = HttpClients.createDefault();
+        RequestConfig requestConfig = RequestConfig.custom()
+                .setConnectionRequestTimeout(5, TimeUnit.MINUTES)
+                .setResponseTimeout(5, TimeUnit.MINUTES)
+                .build();
+
+        ConnectionConfig connectionConfig = ConnectionConfig.custom()
+                .setConnectTimeout(5, TimeUnit.MINUTES)
+                .build();
+
+        PoolingHttpClientConnectionManager poolingHttpClientConnectionManager = PoolingHttpClientConnectionManagerBuilder.create()
+                .setDefaultConnectionConfig(connectionConfig)
+                .build();
+
+        HttpClient httpClient = HttpClientBuilder.create()
+                .setConnectionManager(poolingHttpClientConnectionManager)
+                .setDefaultRequestConfig(requestConfig)
+                .build();
         //Create a HTTP post object for the given URL
         HttpPost httpPost = new HttpPost(url);
         //Add the API key to the request
@@ -128,24 +164,25 @@ public class TriageConnector {
         httpPost.setHeader("Content-type", "application/json");
         httpPost.setEntity(entity);
         //Execute the HTTP POST request
-        CloseableHttpResponse response = httpClient.execute(httpPost);
-        //Get the response
-        HttpEntity responseEntity = response.getEntity();
+        return httpClient.execute(httpPost, (response) -> {
+            //Get the response
+            HttpEntity responseEntity = response.getEntity();
 
-        //Check if the status code indicates an error
-        checkStatusCode(url, response.getStatusLine().getStatusCode());
+            //Check if the status code indicates an error
+            checkStatusCode(url, response.getCode());
 
-        //Read the response in chunks of 1024 bytes
-        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-        int offset;
-        byte[] data = new byte[1024];
-        while ((offset = responseEntity.getContent().read(data, 0, data.length)) != -1) {
-            buffer.write(data, 0, offset);
-        }
-        //Flush the buffer
-        buffer.flush();
-        //Return the byte array
-        return buffer.toByteArray();
+            //Read the response in chunks of 1024 bytes
+            ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+            int offset;
+            byte[] data = new byte[1024];
+            while ((offset = responseEntity.getContent().read(data, 0, data.length)) != -1) {
+                buffer.write(data, 0, offset);
+            }
+            //Flush the buffer
+            buffer.flush();
+            //Return the byte array
+            return buffer.toByteArray();
+        });
 
     }
 
@@ -162,7 +199,23 @@ public class TriageConnector {
      */
     public byte[] post(String url, MultipartEntityBuilder builder) throws IOException {
         //Create a HTTP client
-        CloseableHttpClient httpClient = HttpClients.createDefault();
+        RequestConfig requestConfig = RequestConfig.custom()
+                .setConnectionRequestTimeout(5, TimeUnit.MINUTES)
+                .setResponseTimeout(5, TimeUnit.MINUTES)
+                .build();
+
+        ConnectionConfig connectionConfig = ConnectionConfig.custom()
+                .setConnectTimeout(5, TimeUnit.MINUTES)
+                .build();
+
+        PoolingHttpClientConnectionManager poolingHttpClientConnectionManager = PoolingHttpClientConnectionManagerBuilder.create()
+                .setDefaultConnectionConfig(connectionConfig)
+                .build();
+
+        HttpClient httpClient = HttpClientBuilder.create()
+                .setConnectionManager(poolingHttpClientConnectionManager)
+                .setDefaultRequestConfig(requestConfig)
+                .build();
         //Create a HTTP post object for the given URL
         HttpPost httpPost = new HttpPost(url);
         httpPost.setHeader("Authorization", "Bearer " + key);
@@ -171,24 +224,24 @@ public class TriageConnector {
         //Set the newly built multipart object
         httpPost.setEntity(multipart);
         //Execute the HTTP POST request
-        CloseableHttpResponse response = httpClient.execute(httpPost);
-        //Get the response
-        HttpEntity responseEntity = response.getEntity();
+        return httpClient.execute(httpPost, (response) -> {
+            //Get the response
+            HttpEntity responseEntity = response.getEntity();
 
-        //Check if the status code indicates an error
-        checkStatusCode(url, response.getStatusLine().getStatusCode());
+            //Check if the status code indicates an error
+            checkStatusCode(url, response.getCode());
 
-        //Read the response in chunks of 1024 bytes
-        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-        int offset;
-        byte[] data = new byte[1024];
-        while ((offset = responseEntity.getContent().read(data, 0, data.length)) != -1) {
-            buffer.write(data, 0, offset);
-        }
-        //Flush the buffer
-        buffer.flush();
-        //Return the byte array
-        return buffer.toByteArray();
-
+            //Read the response in chunks of 1024 bytes
+            ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+            int offset;
+            byte[] data = new byte[1024];
+            while ((offset = responseEntity.getContent().read(data, 0, data.length)) != -1) {
+                buffer.write(data, 0, offset);
+            }
+            //Flush the buffer
+            buffer.flush();
+            //Return the byte array
+            return buffer.toByteArray();
+        });
     }
 }
